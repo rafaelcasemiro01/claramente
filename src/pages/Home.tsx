@@ -3,6 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChat } from '@/hooks/useChat'
 
+const ClaramenteLogo = ({ size = 32 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+    <path d="M24 4L42 15V33L24 44L6 33V15Z" fill="#7C3AED" fillOpacity="0.15" stroke="#7C3AED" strokeWidth="1.5" strokeLinejoin="round"/>
+    <path d="M24 4L6 15H42L24 4Z" fill="#7C3AED" fillOpacity="0.3"/>
+    <path d="M6 15L24 26M42 15L24 26" stroke="#7C3AED" strokeWidth="1.2" strokeOpacity="0.7"/>
+    <path d="M24 26L24 44" stroke="#7C3AED" strokeWidth="1.2" strokeOpacity="0.5"/>
+    <circle cx="24" cy="26" r="2.5" fill="#7C3AED"/>
+  </svg>
+)
+
+const BotAvatar = () => (
+  <div style={{width:36, height:36, borderRadius:'50%', background:'#EDE9FE', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
+    <ClaramenteLogo size={22} />
+  </div>
+)
+
 export default function Home() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
@@ -23,58 +39,65 @@ export default function Home() {
   }
 
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+    if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   return (
-    <div style={{minHeight:'100vh', display:'flex', flexDirection:'column', background:'#f7f5f0'}}>
+    <div style={{minHeight:'100vh', display:'flex', flexDirection:'column', background:'#F5F3FF'}}>
+      <style>{`
+        @keyframes bounceDot {
+          0%,60%,100%{transform:translateY(0);opacity:0.4}
+          30%{transform:translateY(-5px);opacity:1}
+        }
+        @media(max-width:640px){
+          .desktop-nav{display:none!important}
+          .mobile-menu-btn{display:flex!important}
+        }
+        @media(min-width:641px){
+          .mobile-menu-btn{display:none!important}
+        }
+      `}</style>
 
       {/* Header */}
       <header style={{
-        background: 'white',
-        borderBottom: '1px solid #ede9e3',
-        padding: '0 20px',
-        height: 60,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 10,
-        boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
+        background:'white', borderBottom:'1px solid #EDE9FE',
+        padding:'0 20px', height:60,
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        position:'sticky', top:0, zIndex:20,
+        boxShadow:'0 1px 12px rgba(109,40,217,0.06)',
       }}>
-        {/* Logo */}
-        <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
-          <div style={{width: 34, height: 34, borderRadius: '50%', background: '#e6f4ed', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d7a4a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-              <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5"/>
-              <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5"/>
-            </svg>
-          </div>
-          <span style={{fontFamily:'Lora, serif', fontSize: 18, fontWeight: 600, color: '#1a2e1a'}}>Claramente</span>
+        <div style={{display:'flex', alignItems:'center', gap:10}}>
+          <ClaramenteLogo size={32} />
+          <span style={{fontFamily:'Lora, serif', fontSize:19, fontWeight:600, color:'#2D1B69', letterSpacing:-0.3}}>
+            Claramente
+          </span>
         </div>
 
-        {/* Ações desktop */}
-        <div className="hidden-mobile" style={{display: 'flex', alignItems: 'center', gap: 12}}>
-          <button onClick={resetChat} style={{fontSize: 13, color: '#888', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', borderRadius: 8}}>
+        {/* Desktop nav */}
+        <div className="desktop-nav" style={{display:'flex', alignItems:'center', gap:8}}>
+          <button onClick={resetChat} style={{fontSize:13, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:'6px 12px', borderRadius:8, fontFamily:'Plus Jakarta Sans, sans-serif'}}>
             Nova conversa
           </button>
           <button onClick={() => navigate('/relatorios')} style={{
-            fontSize: 13, fontWeight: 600, color: '#2d7a4a', background: '#e6f4ed',
-            border: 'none', cursor: 'pointer', padding: '7px 14px', borderRadius: 20,
+            fontSize:13, fontWeight:600, color:'#7C3AED', background:'#EDE9FE',
+            border:'none', cursor:'pointer', padding:'7px 16px', borderRadius:20,
+            fontFamily:'Plus Jakarta Sans, sans-serif',
           }}>
-            📊 Relatórios
+            ✦ Relatórios
           </button>
-          <div style={{width: 1, height: 20, background: '#ede9e3'}}/>
-          <span style={{fontSize: 13, color: '#888'}}>Olá, {profile?.name?.split(' ')[0] || 'você'}</span>
-          <button onClick={signOut} style={{fontSize: 13, color: '#cf4040', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', borderRadius: 8}}>
+          <div style={{width:1, height:18, background:'#EDE9FE', margin:'0 4px'}}/>
+          <span style={{fontSize:13, color:'#9CA3AF', fontFamily:'Plus Jakarta Sans, sans-serif'}}>
+            {profile?.name?.split(' ')[0] || 'você'}
+          </span>
+          <button onClick={signOut} style={{fontSize:13, color:'#EF4444', background:'none', border:'none', cursor:'pointer', padding:'6px 12px', borderRadius:8, fontFamily:'Plus Jakarta Sans, sans-serif'}}>
             Sair
           </button>
         </div>
 
-        {/* Hambúrguer mobile */}
-        <button onClick={() => setMenuOpen(!menuOpen)}
-          style={{display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 6}}
-          className="show-mobile">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round">
+        {/* Mobile menu btn */}
+        <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)}
+          style={{display:'none', background:'none', border:'none', cursor:'pointer', padding:6, alignItems:'center', justifyContent:'center'}}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round">
             {menuOpen
               ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
               : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
@@ -83,78 +106,72 @@ export default function Home() {
         </button>
       </header>
 
-      {/* Menu mobile dropdown */}
+      {/* Menu mobile */}
       {menuOpen && (
-        <div style={{
-          background: 'white', borderBottom: '1px solid #ede9e3',
-          padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 4,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-        }}>
-          <div style={{fontSize: 13, color: '#888', padding: '8px 0', borderBottom: '1px solid #f5f5f5', marginBottom: 4}}>
-            Olá, <strong style={{color: '#1a2e1a'}}>{profile?.name?.split(' ')[0] || 'você'}</strong> 👋
+        <div style={{background:'white', borderBottom:'1px solid #EDE9FE', padding:'8px 20px 20px', boxShadow:'0 4px 16px rgba(109,40,217,0.08)'}}>
+          <div style={{fontSize:13, color:'#9CA3AF', padding:'10px 0 12px', borderBottom:'1px solid #F5F3FF', marginBottom:8}}>
+            Olá, <strong style={{color:'#2D1B69'}}>{profile?.name?.split(' ')[0] || 'você'}</strong> 👋
           </div>
-          <button onClick={() => { resetChat(); setMenuOpen(false) }}
-            style={{textAlign:'left', fontSize: 14, color: '#444', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', alignItems: 'center', gap: 10}}>
-            <span style={{fontSize: 18}}>💬</span> Nova conversa
-          </button>
-          <button onClick={() => { navigate('/relatorios'); setMenuOpen(false) }}
-            style={{textAlign:'left', fontSize: 14, color: '#2d7a4a', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600}}>
-            <span style={{fontSize: 18}}>📊</span> Relatórios
-          </button>
-          <button onClick={signOut}
-            style={{textAlign:'left', fontSize: 14, color: '#cf4040', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0', display: 'flex', alignItems: 'center', gap: 10}}>
-            <span style={{fontSize: 18}}>🚪</span> Sair da conta
-          </button>
+          {[
+            { icon:'💬', label:'Nova conversa', action:() => { resetChat(); setMenuOpen(false) }, color:'#1E1B2E' },
+            { icon:'✦', label:'Relatórios', action:() => { navigate('/relatorios'); setMenuOpen(false) }, color:'#7C3AED' },
+            { icon:'🚪', label:'Sair', action:signOut, color:'#EF4444' },
+          ].map(item => (
+            <button key={item.label} onClick={item.action} style={{
+              display:'flex', alignItems:'center', gap:12, width:'100%',
+              textAlign:'left', fontSize:14, color:item.color, background:'none',
+              border:'none', cursor:'pointer', padding:'11px 0',
+              fontFamily:'Plus Jakarta Sans, sans-serif', fontWeight: item.label==='Relatórios' ? 600 : 400,
+            }}>
+              <span style={{fontSize:18, width:24, textAlign:'center'}}>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Banner crise */}
+      {/* Crise */}
       {isCrisis && (
-        <div style={{margin: '12px 16px 0', padding: '12px 16px', borderRadius: 14, background: '#fff7ed', border: '1px solid #fec89a', fontSize: 13, color: '#92400e', lineHeight: 1.5}}>
+        <div style={{margin:'12px 16px 0', padding:'12px 16px', borderRadius:14, background:'#FFF7ED', border:'1px solid #FED7AA', fontSize:13, color:'#92400E', lineHeight:1.5}}>
           🆘 Se você estiver em crise, ligue para o <strong>CVV: 188</strong> (gratuito, 24h) ou acesse <strong>cvv.org.br</strong>
         </div>
       )}
 
       {/* Mensagens */}
-      <div style={{flex: 1, overflowY: 'auto', padding: '20px 16px'}}>
-        <div style={{maxWidth: 640, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16}}>
+      <div style={{flex:1, overflowY:'auto', padding:'24px 16px'}}>
+        <div style={{maxWidth:640, margin:'0 auto', display:'flex', flexDirection:'column', gap:16}}>
 
           {messages.length === 0 && (
-            <div style={{display:'flex', gap: 12, alignItems:'flex-end'}}>
-              <div style={{width: 36, height: 36, borderRadius: '50%', background: '#e6f4ed', flexShrink: 0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d7a4a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                  <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5"/>
-                  <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5"/>
-                </svg>
-              </div>
-              <div style={{background:'white', borderRadius:'18px 18px 18px 4px', padding:'14px 18px', maxWidth:'80%', fontSize:14, lineHeight:1.65, color:'#2c2c2a', boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
-                Olá, {profile?.name?.split(' ')[0] || 'seja bem-vindo'}! 🌿<br/><br/>
-                Este é seu espaço seguro de introspecção. Como você está se sentindo hoje?
+            <div style={{display:'flex', gap:12, alignItems:'flex-end'}}>
+              <BotAvatar />
+              <div style={{
+                background:'white', borderRadius:'18px 18px 18px 4px',
+                padding:'14px 18px', maxWidth:'80%', fontSize:14,
+                lineHeight:1.7, color:'#2c2c2a',
+                boxShadow:'0 2px 12px rgba(109,40,217,0.08)',
+                border:'1px solid #EDE9FE',
+              }}>
+                Olá, {profile?.name?.split(' ')[0] || 'seja bem-vindo'}! 🔮<br/><br/>
+                Este é seu espaço seguro de introspecção e autoconhecimento. Como você está se sentindo hoje?
               </div>
             </div>
           )}
 
           {messages.map(msg => (
-            <div key={msg.id} style={{display:'flex', gap: 12, alignItems:'flex-end', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row'}}>
-              {msg.role === 'assistant' && (
-                <div style={{width:36, height:36, borderRadius:'50%', background:'#e6f4ed', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d7a4a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                    <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5"/>
-                    <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5"/>
-                  </svg>
-                </div>
-              )}
+            <div key={msg.id} style={{display:'flex', gap:12, alignItems:'flex-end', flexDirection: msg.role==='user' ? 'row-reverse':'row'}}>
+              {msg.role==='assistant' && <BotAvatar />}
               <div style={{
-                borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                padding: '12px 16px', maxWidth: '75%', fontSize: 14, lineHeight: 1.65,
-                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                background: msg.role === 'user' ? 'linear-gradient(135deg, #2d7a4a, #1a4a2e)' : 'white',
-                color: msg.role === 'user' ? 'white' : '#2c2c2a',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                borderRadius: msg.role==='user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                padding:'12px 16px', maxWidth:'78%', fontSize:14,
+                lineHeight:1.7, whiteSpace:'pre-wrap', wordBreak:'break-word',
+                background: msg.role==='user'
+                  ? 'linear-gradient(135deg, #7C3AED, #5B21B6)'
+                  : 'white',
+                color: msg.role==='user' ? 'white' : '#1E1B2E',
+                boxShadow: msg.role==='user'
+                  ? '0 4px 12px rgba(124,58,237,0.3)'
+                  : '0 2px 12px rgba(109,40,217,0.08)',
+                border: msg.role==='assistant' ? '1px solid #EDE9FE' : 'none',
               }}>
                 {msg.content}
               </div>
@@ -163,17 +180,10 @@ export default function Home() {
 
           {isTyping && (
             <div style={{display:'flex', gap:12, alignItems:'flex-end'}}>
-              <div style={{width:36, height:36, borderRadius:'50%', background:'#e6f4ed', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2d7a4a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                  <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5"/>
-                  <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5"/>
-                </svg>
-              </div>
-              <div style={{background:'white', borderRadius:'18px 18px 18px 4px', padding:'14px 18px', display:'flex', gap:5, boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+              <BotAvatar />
+              <div style={{background:'white', borderRadius:'18px 18px 18px 4px', padding:'16px 20px', display:'flex', gap:6, boxShadow:'0 2px 12px rgba(109,40,217,0.08)', border:'1px solid #EDE9FE'}}>
                 {[0,1,2].map(i => (
-                  <div key={i} style={{width:8, height:8, borderRadius:'50%', background:'#3d8b5a', animation:`bounceDot 1.2s ${i*0.15}s infinite`}}/>
+                  <div key={i} style={{width:8, height:8, borderRadius:'50%', background:'#A78BFA', animation:`bounceDot 1.2s ${i*0.15}s infinite`}}/>
                 ))}
               </div>
             </div>
@@ -183,52 +193,38 @@ export default function Home() {
       </div>
 
       {/* Input */}
-      <div style={{background:'white', borderTop:'1px solid #ede9e3', padding:'12px 16px 20px', boxShadow:'0 -2px 12px rgba(0,0,0,0.04)'}}>
+      <div style={{background:'white', borderTop:'1px solid #EDE9FE', padding:'14px 16px 24px', boxShadow:'0 -4px 16px rgba(109,40,217,0.06)'}}>
         <div style={{maxWidth:640, margin:'0 auto', display:'flex', gap:10, alignItems:'flex-end'}}>
           <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-            placeholder="Compartilhe seus pensamentos..."
-            rows={1}
+            placeholder="Compartilhe seus pensamentos..." rows={1}
             style={{
-              flex:1, padding:'12px 16px', borderRadius:20, border:'1.5px solid #e8e5e0',
-              fontSize:14, resize:'none', outline:'none', fontFamily:'Plus Jakarta Sans, sans-serif',
-              background:'#fafaf8', lineHeight:1.5, maxHeight:100, transition:'border-color 0.2s',
+              flex:1, padding:'13px 18px', borderRadius:22,
+              border:'1.5px solid #E8E4F5', fontSize:14, resize:'none', outline:'none',
+              fontFamily:'Plus Jakarta Sans, sans-serif', background:'#FAFAFA',
+              lineHeight:1.5, maxHeight:100, color:'#1E1B2E',
+              transition:'border-color 0.2s, box-shadow 0.2s',
             }}
-            onFocus={e => e.target.style.borderColor='#2d7a4a'}
-            onBlur={e => e.target.style.borderColor='#e8e5e0'}
+            onFocus={e => { e.target.style.borderColor='#7C3AED'; e.target.style.boxShadow='0 0 0 3px rgba(124,58,237,0.08)' }}
+            onBlur={e => { e.target.style.borderColor='#E8E4F5'; e.target.style.boxShadow='none' }}
           />
-          <button onClick={handleSend} disabled={isTyping || !input.trim()}
-            style={{
-              width:46, height:46, borderRadius:'50%', border:'none', cursor: isTyping || !input.trim() ? 'not-allowed':'pointer',
-              background: isTyping || !input.trim() ? '#c8ddd0' : 'linear-gradient(135deg, #2d7a4a, #1a4a2e)',
-              display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-              transition:'all 0.2s',
-              boxShadow: isTyping || !input.trim() ? 'none' : '0 4px 12px rgba(45,122,74,0.35)',
-            }}>
+          <button onClick={handleSend} disabled={isTyping || !input.trim()} style={{
+            width:48, height:48, borderRadius:'50%', border:'none',
+            cursor: isTyping||!input.trim() ? 'not-allowed':'pointer',
+            background: isTyping||!input.trim() ? '#DDD8F0' : 'linear-gradient(135deg, #7C3AED, #5B21B6)',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+            transition:'all 0.2s',
+            boxShadow: isTyping||!input.trim() ? 'none' : '0 4px 14px rgba(124,58,237,0.4)',
+          }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/>
               <polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
-        <p style={{textAlign:'center', fontSize:11, color:'#bbb', marginTop:8, marginBottom:0}}>
+        <p style={{textAlign:'center', fontSize:11, color:'#C4B5FD', marginTop:8, marginBottom:0}}>
           Não substitui acompanhamento psicológico profissional · CVV: 188
         </p>
       </div>
-
-      {/* CSS responsivo */}
-      <style>{`
-        @media (max-width: 640px) {
-          .hidden-mobile { display: none !important; }
-          .show-mobile { display: flex !important; }
-        }
-        @media (min-width: 641px) {
-          .show-mobile { display: none !important; }
-        }
-        @keyframes bounceDot {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-          30% { transform: translateY(-5px); opacity: 1; }
-        }
-      `}</style>
     </div>
   )
 }
