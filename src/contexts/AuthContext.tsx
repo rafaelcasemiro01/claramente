@@ -22,14 +22,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  async function fetchProfile(userId: string) {
-    const { data } = await supabase
+ async function fetchProfile(userId: string) {
+  try {
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
-    if (data) setProfile(data as Profile)
+    if (data && !error) setProfile(data as Profile)
+  } catch {
+    // Perfil ainda não existe, ignora
   }
+}
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
