@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChat } from '@/hooks/useChat'
 
 export default function Home() {
+  const navigate = useNavigate()
   const { profile, signOut } = useAuth()
   const { messages, isTyping, isCrisis, sendMessage, resetChat } = useChat()
   const [input, setInput] = useState('')
@@ -25,7 +27,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{background:'#fafaf8'}}>
-      {/* Header */}
       <header className="border-b border-gray-100 bg-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{background:'#e6f4ed'}}>
@@ -40,23 +41,20 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-4">
           <button onClick={resetChat} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">Nova conversa</button>
+          <button onClick={() => navigate('/relatorios')} className="text-sm font-medium transition-colors" style={{color:'#2d7a4a'}}>📊 Relatórios</button>
           <span className="text-sm text-gray-500">Olá, {profile?.name || 'você'} 👋</span>
           <button onClick={signOut} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">Sair</button>
         </div>
       </header>
 
-      {/* Banner de crise */}
       {isCrisis && (
         <div className="mx-4 mt-4 p-3 rounded-xl text-sm" style={{background:'#fff6f0', border:'1px solid #f5c4b3', color:'#993c1d'}}>
           🆘 Se você estiver em crise, ligue para o <strong>CVV: 188</strong> (24h, gratuito) ou acesse <strong>cvv.org.br</strong>
         </div>
       )}
 
-      {/* Mensagens */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-2xl mx-auto space-y-4">
-
-          {/* Boas-vindas */}
           {messages.length === 0 && (
             <div className="flex gap-3 items-end animate-fade-up">
               <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{background:'#e6f4ed'}}>
@@ -74,7 +72,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Histórico */}
           {messages.map(msg => (
             <div key={msg.id} className={`flex gap-3 items-end animate-fade-up ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
               {msg.role === 'assistant' && (
@@ -99,7 +96,6 @@ export default function Home() {
             </div>
           ))}
 
-          {/* Digitando */}
           {isTyping && (
             <div className="flex gap-3 items-end">
               <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{background:'#e6f4ed'}}>
@@ -122,7 +118,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Input */}
       <div className="border-t border-gray-100 bg-white px-4 py-4">
         <div className="max-w-2xl mx-auto flex gap-3 items-end">
           <textarea
