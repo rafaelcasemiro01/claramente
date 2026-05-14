@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { generateReport, PERIODS, ReportData, PeriodType } from '@/lib/reportService'
+import { generateReport, PERIODS } from '@/lib/reportService'
+import type { ReportData, PeriodType } from '@/lib/reportService'
 
 export default function Reports() {
   const { user, profile } = useAuth()
