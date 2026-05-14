@@ -1,228 +1,161 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useChat } from '@/hooks/useChat'
 
-const ClaramenteLogo = ({ size = 32 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-    <path d="M24 4L42 15V33L24 44L6 33V15Z" fill="#7C3AED" fillOpacity="0.15" stroke="#7C3AED" strokeWidth="1.5" strokeLinejoin="round"/>
-    <path d="M24 4L6 15H42L24 4Z" fill="#7C3AED" fillOpacity="0.3"/>
-    <path d="M6 15L24 26M42 15L24 26" stroke="#7C3AED" strokeWidth="1.2" strokeOpacity="0.7"/>
-    <path d="M24 26L24 44" stroke="#7C3AED" strokeWidth="1.2" strokeOpacity="0.5"/>
-    <circle cx="24" cy="26" r="2.5" fill="#7C3AED"/>
-  </svg>
-)
+type Mode = 'login' | 'signup'
 
-const BotAvatar = () => (
-  <div style={{width:36, height:36, borderRadius:'50%', background:'#EDE9FE', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-    <ClaramenteLogo size={22} />
-  </div>
-)
+function CrystalLogo({ size = 48, light = false }: { size?: number; light?: boolean }) {
+  const c = light ? 'white' : '#8B5CF6'
+  const cf = light ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.15)'
+  const cl = light ? 'rgba(255,255,255,0.6)' : 'rgba(139,92,246,0.6)'
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
+      <path d="M28 4L50 18V38L28 52L6 38V18Z" fill={cf} stroke={c} strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M28 4L6 18H50Z" fill={light ? 'rgba(255,255,255,0.35)' : 'rgba(139,92,246,0.35)'}/>
+      <line x1="6"  y1="18" x2="28" y2="30" stroke={cl} strokeWidth="1.2"/>
+      <line x1="50" y1="18" x2="28" y2="30" stroke={cl} strokeWidth="1.2"/>
+      <line x1="28" y1="30" x2="28" y2="52" stroke={light ? 'rgba(255,255,255,0.35)' : 'rgba(139,92,246,0.35)'} strokeWidth="1"/>
+      <circle cx="28" cy="30" r="3" fill={c}/>
+    </svg>
+  )
+}
 
-export default function Home() {
-  const navigate = useNavigate()
-  const { profile, signOut } = useAuth()
-  const { messages, isTyping, isCrisis, sendMessage, resetChat } = useChat()
-  const [input, setInput] = useState('')
-  const [menuOpen, setMenuOpen] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+export default function Landing() {
+  const { signIn, signUp } = useAuth()
+  const [mode, setMode] = useState<Mode>('login')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
-
-  async function handleSend() {
-    if (!input.trim() || isTyping) return
-    const text = input.trim()
-    setInput('')
-    await sendMessage(text)
-  }
-
-  function handleKey(e: React.KeyboardEvent) {
-    if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+  async function handleSubmit() {
+    setError(''); setSuccess(''); setLoading(true)
+    if (mode === 'login') {
+      const { error } = await signIn(email, password)
+      if (error) setError('E-mail ou senha incorretos.')
+    } else {
+      if (!name.trim()) { setError('Informe seu nome.'); setLoading(false); return }
+      if (password.length < 8) { setError('Senha: mínimo 8 caracteres.'); setLoading(false); return }
+      const { error } = await signUp(email, password, name)
+      if (error) setError('Erro ao criar conta.')
+      else setSuccess('Conta criada! Verifique seu e-mail.')
+    }
+    setLoading(false)
   }
 
   return (
-    <div style={{minHeight:'100vh', display:'flex', flexDirection:'column', background:'#F5F3FF'}}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0D0B1A', fontFamily: "'DM Sans', 'Plus Jakarta Sans', sans-serif" }}>
       <style>{`
-        @keyframes bounceDot {
-          0%,60%,100%{transform:translateY(0);opacity:0.4}
-          30%{transform:translateY(-5px);opacity:1}
-        }
-        @media(max-width:640px){
-          .desktop-nav{display:none!important}
-          .mobile-menu-btn{display:flex!important}
-        }
-        @media(min-width:641px){
-          .mobile-menu-btn{display:none!important}
-        }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::placeholder { color: #4A4268 !important; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #1E1840 inset !important; -webkit-text-fill-color: #E9E4FF !important; }
       `}</style>
 
+      {/* Glow de fundo */}
+      <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(109,40,217,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+
       {/* Header */}
-      <header style={{
-        background:'white', borderBottom:'1px solid #EDE9FE',
-        padding:'0 20px', height:60,
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        position:'sticky', top:0, zIndex:20,
-        boxShadow:'0 1px 12px rgba(109,40,217,0.06)',
-      }}>
-        <div style={{display:'flex', alignItems:'center', gap:10}}>
-          <ClaramenteLogo size={32} />
-          <span style={{fontFamily:'Lora, serif', fontSize:19, fontWeight:600, color:'#2D1B69', letterSpacing:-0.3}}>
-            Claramente
-          </span>
-        </div>
-
-        {/* Desktop nav */}
-        <div className="desktop-nav" style={{display:'flex', alignItems:'center', gap:8}}>
-          <button onClick={resetChat} style={{fontSize:13, color:'#9CA3AF', background:'none', border:'none', cursor:'pointer', padding:'6px 12px', borderRadius:8, fontFamily:'Plus Jakarta Sans, sans-serif'}}>
-            Nova conversa
-          </button>
-          <button onClick={() => navigate('/relatorios')} style={{
-            fontSize:13, fontWeight:600, color:'#7C3AED', background:'#EDE9FE',
-            border:'none', cursor:'pointer', padding:'7px 16px', borderRadius:20,
-            fontFamily:'Plus Jakarta Sans, sans-serif',
-          }}>
-            ✦ Relatórios
-          </button>
-          <div style={{width:1, height:18, background:'#EDE9FE', margin:'0 4px'}}/>
-          <span style={{fontSize:13, color:'#9CA3AF', fontFamily:'Plus Jakarta Sans, sans-serif'}}>
-            {profile?.name?.split(' ')[0] || 'você'}
-          </span>
-          <button onClick={signOut} style={{fontSize:13, color:'#EF4444', background:'none', border:'none', cursor:'pointer', padding:'6px 12px', borderRadius:8, fontFamily:'Plus Jakarta Sans, sans-serif'}}>
-            Sair
-          </button>
-        </div>
-
-        {/* Mobile menu btn */}
-        <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)}
-          style={{display:'none', background:'none', border:'none', cursor:'pointer', padding:6, alignItems:'center', justifyContent:'center'}}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round">
-            {menuOpen
-              ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
-              : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
-            }
-          </svg>
-        </button>
+      <header style={{ padding: '24px 32px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
+        <CrystalLogo size={32} light />
+        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: 'white', letterSpacing: -0.3 }}>Claramente</span>
       </header>
 
-      {/* Menu mobile */}
-      {menuOpen && (
-        <div style={{background:'white', borderBottom:'1px solid #EDE9FE', padding:'8px 20px 20px', boxShadow:'0 4px 16px rgba(109,40,217,0.08)'}}>
-          <div style={{fontSize:13, color:'#9CA3AF', padding:'10px 0 12px', borderBottom:'1px solid #F5F3FF', marginBottom:8}}>
-            Olá, <strong style={{color:'#2D1B69'}}>{profile?.name?.split(' ')[0] || 'você'}</strong> 👋
+      {/* Hero */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 24px 60px', position: 'relative', zIndex: 1 }}>
+
+        {/* Logo central */}
+        <div style={{ marginBottom: 28, position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: -20, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)' }} />
+          <CrystalLogo size={72} light />
+        </div>
+
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 42, color: 'white', textAlign: 'center', marginBottom: 12, letterSpacing: -1, lineHeight: 1.1 }}>
+          Claramente
+        </h1>
+        <p style={{ fontSize: 16, color: '#9B8FCC', textAlign: 'center', marginBottom: 48, lineHeight: 1.6, maxWidth: 300 }}>
+          Seu espaço sagrado de introspecção,<br />autoconhecimento e transmutação interior
+        </p>
+
+        {/* Card de auth */}
+        <div style={{ width: '100%', maxWidth: 420, background: '#13102A', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 24, padding: '8px', boxShadow: '0 32px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05)' }}>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', background: '#0D0B1A', borderRadius: 18, padding: '4px', marginBottom: 24 }}>
+            {(['login', 'signup'] as Mode[]).map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }} style={{
+                flex: 1, padding: '11px 0', borderRadius: 14, border: 'none',
+                cursor: 'pointer', fontSize: 14, fontWeight: 500, transition: 'all 0.2s',
+                fontFamily: "'DM Sans', sans-serif",
+                background: mode === m ? '#8B5CF6' : 'transparent',
+                color: mode === m ? 'white' : '#6B6480',
+                boxShadow: mode === m ? '0 4px 12px rgba(139,92,246,0.4)' : 'none',
+              }}>
+                {m === 'login' ? 'Entrar' : 'Criar conta'}
+              </button>
+            ))}
           </div>
-          {[
-            { icon:'💬', label:'Nova conversa', action:() => { resetChat(); setMenuOpen(false) }, color:'#1E1B2E' },
-            { icon:'✦', label:'Relatórios', action:() => { navigate('/relatorios'); setMenuOpen(false) }, color:'#7C3AED' },
-            { icon:'🚪', label:'Sair', action:signOut, color:'#EF4444' },
-          ].map(item => (
-            <button key={item.label} onClick={item.action} style={{
-              display:'flex', alignItems:'center', gap:12, width:'100%',
-              textAlign:'left', fontSize:14, color:item.color, background:'none',
-              border:'none', cursor:'pointer', padding:'11px 0',
-              fontFamily:'Plus Jakarta Sans, sans-serif', fontWeight: item.label==='Relatórios' ? 600 : 400,
-            }}>
-              <span style={{fontSize:18, width:24, textAlign:'center'}}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
 
-      {/* Crise */}
-      {isCrisis && (
-        <div style={{margin:'12px 16px 0', padding:'12px 16px', borderRadius:14, background:'#FFF7ED', border:'1px solid #FED7AA', fontSize:13, color:'#92400E', lineHeight:1.5}}>
-          🆘 Se você estiver em crise, ligue para o <strong>CVV: 188</strong> (gratuito, 24h) ou acesse <strong>cvv.org.br</strong>
-        </div>
-      )}
-
-      {/* Mensagens */}
-      <div style={{flex:1, overflowY:'auto', padding:'24px 16px'}}>
-        <div style={{maxWidth:640, margin:'0 auto', display:'flex', flexDirection:'column', gap:16}}>
-
-          {messages.length === 0 && (
-            <div style={{display:'flex', gap:12, alignItems:'flex-end'}}>
-              <BotAvatar />
-              <div style={{
-                background:'white', borderRadius:'18px 18px 18px 4px',
-                padding:'14px 18px', maxWidth:'80%', fontSize:14,
-                lineHeight:1.7, color:'#2c2c2a',
-                boxShadow:'0 2px 12px rgba(109,40,217,0.08)',
-                border:'1px solid #EDE9FE',
-              }}>
-                Olá, {profile?.name?.split(' ')[0] || 'seja bem-vindo'}! 🔮<br/><br/>
-                Este é seu espaço seguro de introspecção e autoconhecimento. Como você está se sentindo hoje?
+          {/* Campos */}
+          <div style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {mode === 'signup' && (
+              <div>
+                <label style={{ fontSize: 12, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 500, letterSpacing: 0.3 }}>NOME</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Como você quer ser chamado?" style={{
+                  width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15, color: '#E9E4FF',
+                  background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+                }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }} />
               </div>
-            </div>
-          )}
+            )}
 
-          {messages.map(msg => (
-            <div key={msg.id} style={{display:'flex', gap:12, alignItems:'flex-end', flexDirection: msg.role==='user' ? 'row-reverse':'row'}}>
-              {msg.role==='assistant' && <BotAvatar />}
-              <div style={{
-                borderRadius: msg.role==='user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                padding:'12px 16px', maxWidth:'78%', fontSize:14,
-                lineHeight:1.7, whiteSpace:'pre-wrap', wordBreak:'break-word',
-                background: msg.role==='user'
-                  ? 'linear-gradient(135deg, #7C3AED, #5B21B6)'
-                  : 'white',
-                color: msg.role==='user' ? 'white' : '#1E1B2E',
-                boxShadow: msg.role==='user'
-                  ? '0 4px 12px rgba(124,58,237,0.3)'
-                  : '0 2px 12px rgba(109,40,217,0.08)',
-                border: msg.role==='assistant' ? '1px solid #EDE9FE' : 'none',
-              }}>
-                {msg.content}
-              </div>
+            <div>
+              <label style={{ fontSize: 12, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 500, letterSpacing: 0.3 }}>E-MAIL</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" style={{
+                width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15, color: '#E9E4FF',
+                background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+                fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+              }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }} />
             </div>
-          ))}
 
-          {isTyping && (
-            <div style={{display:'flex', gap:12, alignItems:'flex-end'}}>
-              <BotAvatar />
-              <div style={{background:'white', borderRadius:'18px 18px 18px 4px', padding:'16px 20px', display:'flex', gap:6, boxShadow:'0 2px 12px rgba(109,40,217,0.08)', border:'1px solid #EDE9FE'}}>
-                {[0,1,2].map(i => (
-                  <div key={i} style={{width:8, height:8, borderRadius:'50%', background:'#A78BFA', animation:`bounceDot 1.2s ${i*0.15}s infinite`}}/>
-                ))}
-              </div>
+            <div>
+              <label style={{ fontSize: 12, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 500, letterSpacing: 0.3 }}>SENHA</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                placeholder={mode === 'signup' ? 'Mínimo 8 caracteres' : '••••••••'}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()} style={{
+                  width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15, color: '#E9E4FF',
+                  background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+                }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }} />
             </div>
-          )}
-          <div ref={bottomRef}/>
-        </div>
-      </div>
 
-      {/* Input */}
-      <div style={{background:'white', borderTop:'1px solid #EDE9FE', padding:'14px 16px 24px', boxShadow:'0 -4px 16px rgba(109,40,217,0.06)'}}>
-        <div style={{maxWidth:640, margin:'0 auto', display:'flex', gap:10, alignItems:'flex-end'}}>
-          <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
-            placeholder="Compartilhe seus pensamentos..." rows={1}
-            style={{
-              flex:1, padding:'13px 18px', borderRadius:22,
-              border:'1.5px solid #E8E4F5', fontSize:14, resize:'none', outline:'none',
-              fontFamily:'Plus Jakarta Sans, sans-serif', background:'#FAFAFA',
-              lineHeight:1.5, maxHeight:100, color:'#1E1B2E',
-              transition:'border-color 0.2s, box-shadow 0.2s',
+            {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#FCA5A5' }}>{error}</div>}
+            {success && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#86EFAC' }}>{success}</div>}
+
+            <button onClick={handleSubmit} disabled={loading} style={{
+              width: '100%', padding: '16px', borderRadius: 16, border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              background: loading ? '#3B2E6E' : '#8B5CF6',
+              color: 'white', fontSize: 15, fontWeight: 600, marginTop: 4,
+              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s', letterSpacing: 0.2,
+              boxShadow: loading ? 'none' : '0 8px 24px rgba(139,92,246,0.4)',
             }}
-            onFocus={e => { e.target.style.borderColor='#7C3AED'; e.target.style.boxShadow='0 0 0 3px rgba(124,58,237,0.08)' }}
-            onBlur={e => { e.target.style.borderColor='#E8E4F5'; e.target.style.boxShadow='none' }}
-          />
-          <button onClick={handleSend} disabled={isTyping || !input.trim()} style={{
-            width:48, height:48, borderRadius:'50%', border:'none',
-            cursor: isTyping||!input.trim() ? 'not-allowed':'pointer',
-            background: isTyping||!input.trim() ? '#DDD8F0' : 'linear-gradient(135deg, #7C3AED, #5B21B6)',
-            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-            transition:'all 0.2s',
-            boxShadow: isTyping||!input.trim() ? 'none' : '0 4px 14px rgba(124,58,237,0.4)',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
+            onMouseEnter={e => { if (!loading) (e.target as HTMLElement).style.background = '#7C3AED' }}
+            onMouseLeave={e => { if (!loading) (e.target as HTMLElement).style.background = '#8B5CF6' }}>
+              {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+            </button>
+          </div>
         </div>
-        <p style={{textAlign:'center', fontSize:11, color:'#C4B5FD', marginTop:8, marginBottom:0}}>
-          Não substitui acompanhamento psicológico profissional · CVV: 188
+
+        <p style={{ marginTop: 20, fontSize: 13, color: '#4A4268', textAlign: 'center' }}>
+          Não substitui acompanhamento psicológico profissional.
         </p>
       </div>
     </div>

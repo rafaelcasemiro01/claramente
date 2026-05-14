@@ -3,15 +3,21 @@ import { useAuth } from '@/contexts/AuthContext'
 
 type Mode = 'login' | 'signup'
 
-const ClaramenteLogo = ({ size = 48, color = '#7C3AED' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 4L42 15V33L24 44L6 33V15Z" fill={color} fillOpacity="0.12" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
-    <path d="M24 4L6 15H42L24 4Z" fill={color} fillOpacity="0.25"/>
-    <path d="M6 15L24 26M42 15L24 26" stroke={color} strokeWidth="1.2" strokeOpacity="0.7"/>
-    <path d="M24 26L24 44" stroke={color} strokeWidth="1.2" strokeOpacity="0.5"/>
-    <circle cx="24" cy="26" r="2.5" fill={color}/>
-  </svg>
-)
+function CrystalLogo({ size = 48, light = false }: { size?: number; light?: boolean }) {
+  const c = light ? 'white' : '#8B5CF6'
+  const cf = light ? 'rgba(255,255,255,0.25)' : 'rgba(139,92,246,0.15)'
+  const cl = light ? 'rgba(255,255,255,0.6)' : 'rgba(139,92,246,0.6)'
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
+      <path d="M28 4L50 18V38L28 52L6 38V18Z" fill={cf} stroke={c} strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M28 4L6 18H50Z" fill={light ? 'rgba(255,255,255,0.35)' : 'rgba(139,92,246,0.35)'}/>
+      <line x1="6"  y1="18" x2="28" y2="30" stroke={cl} strokeWidth="1.2"/>
+      <line x1="50" y1="18" x2="28" y2="30" stroke={cl} strokeWidth="1.2"/>
+      <line x1="28" y1="30" x2="28" y2="52" stroke={light ? 'rgba(255,255,255,0.35)' : 'rgba(139,92,246,0.35)'} strokeWidth="1"/>
+      <circle cx="28" cy="30" r="3" fill={c}/>
+    </svg>
+  )
+}
 
 export default function Landing() {
   const { signIn, signUp } = useAuth()
@@ -38,117 +44,119 @@ export default function Landing() {
     setLoading(false)
   }
 
-  const inputStyle = {
-    width: '100%', padding: '13px 16px', borderRadius: 12, fontSize: 15,
-    border: '1.5px solid #E8E4F5', outline: 'none',
-    fontFamily: 'Plus Jakarta Sans, sans-serif',
-    background: '#FAFAFA', boxSizing: 'border-box' as const,
-    color: '#1E1B2E', transition: 'border-color 0.2s, box-shadow 0.2s',
-  }
-
   return (
-    <div style={{minHeight:'100vh', display:'flex', flexDirection:'column', background:'#F5F3FF'}}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0D0B1A', fontFamily: "'DM Sans', 'Plus Jakarta Sans', sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::placeholder { color: #4A4268 !important; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 100px #1E1840 inset !important; -webkit-text-fill-color: #E9E4FF !important; }
       `}</style>
 
-      {/* Hero */}
-      <div style={{
-        background: 'linear-gradient(145deg, #2D1B69 0%, #5B21B6 50%, #7C3AED 100%)',
-        padding: '56px 32px 52px',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Círculos decorativos */}
-        <div style={{position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%', background:'rgba(167,139,250,0.15)', pointerEvents:'none'}}/>
-        <div style={{position:'absolute', bottom:-40, left:-40, width:150, height:150, borderRadius:'50%', background:'rgba(139,92,246,0.1)', pointerEvents:'none'}}/>
+      {/* Glow de fundo */}
+      <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(109,40,217,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
-        <ClaramenteLogo size={60} color="white" />
-        <h1 style={{fontFamily:'Lora, serif', fontSize: 34, fontWeight: 600, color:'white', margin:0, letterSpacing:-0.5}}>
+      {/* Header */}
+      <header style={{ padding: '24px 32px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
+        <CrystalLogo size={32} light />
+        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: 'white', letterSpacing: -0.3 }}>Claramente</span>
+      </header>
+
+      {/* Hero */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 24px 60px', position: 'relative', zIndex: 1 }}>
+
+        {/* Logo central */}
+        <div style={{ marginBottom: 28, position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: -20, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)' }} />
+          <CrystalLogo size={72} light />
+        </div>
+
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 42, color: 'white', textAlign: 'center', marginBottom: 12, letterSpacing: -1, lineHeight: 1.1 }}>
           Claramente
         </h1>
-        <p style={{fontSize:15, color:'rgba(255,255,255,0.75)', margin:0, textAlign:'center', lineHeight:1.6, maxWidth:280}}>
-          Seu espaço seguro de introspecção, autoconhecimento e transmutação interior
+        <p style={{ fontSize: 16, color: '#9B8FCC', textAlign: 'center', marginBottom: 48, lineHeight: 1.6, maxWidth: 300 }}>
+          Seu espaço sagrado de introspecção,<br />autoconhecimento e transmutação interior
         </p>
-      </div>
 
-      {/* Card */}
-      <div style={{flex:1, display:'flex', flexDirection:'column', padding:'0 20px 40px'}}>
-        <div style={{
-          background:'white', borderRadius:24, padding:'32px 24px',
-          marginTop:-28, boxShadow:'0 8px 32px rgba(109,40,217,0.10)',
-          maxWidth:440, width:'100%', alignSelf:'center',
-          border: '1px solid #EDE9FE',
-        }}>
+        {/* Card de auth */}
+        <div style={{ width: '100%', maxWidth: 420, background: '#13102A', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 24, padding: '8px', boxShadow: '0 32px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.05)' }}>
 
           {/* Tabs */}
-          <div style={{display:'flex', background:'#F5F3FF', borderRadius:12, padding:4, marginBottom:28}}>
-            {(['login','signup'] as Mode[]).map(m => (
-              <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }}
-                style={{
-                  flex:1, padding:'10px 0', borderRadius:10, border:'none', cursor:'pointer',
-                  fontFamily:'Plus Jakarta Sans, sans-serif', fontSize:14, fontWeight:500,
-                  transition:'all 0.2s',
-                  background: mode===m ? 'white' : 'transparent',
-                  color: mode===m ? '#6D28D9' : '#9CA3AF',
-                  boxShadow: mode===m ? '0 2px 8px rgba(109,40,217,0.12)' : 'none',
-                }}>
-                {m==='login' ? 'Entrar' : 'Criar conta'}
+          <div style={{ display: 'flex', background: '#0D0B1A', borderRadius: 18, padding: '4px', marginBottom: 24 }}>
+            {(['login', 'signup'] as Mode[]).map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }} style={{
+                flex: 1, padding: '11px 0', borderRadius: 14, border: 'none',
+                cursor: 'pointer', fontSize: 14, fontWeight: 500, transition: 'all 0.2s',
+                fontFamily: "'DM Sans', sans-serif",
+                background: mode === m ? '#8B5CF6' : 'transparent',
+                color: mode === m ? 'white' : '#6B6480',
+                boxShadow: mode === m ? '0 4px 12px rgba(139,92,246,0.4)' : 'none',
+              }}>
+                {m === 'login' ? 'Entrar' : 'Criar conta'}
               </button>
             ))}
           </div>
 
-          <div style={{display:'flex', flexDirection:'column', gap:16}}>
-            {mode==='signup' && (
+          {/* Campos */}
+          <div style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {mode === 'signup' && (
               <div>
-                <label style={{fontSize:13, color:'#6D6A8A', display:'block', marginBottom:6, fontWeight:500}}>Seu nome</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)}
-                  placeholder="Como podemos te chamar?" style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor='#7C3AED'; e.target.style.boxShadow='0 0 0 3px rgba(124,58,237,0.08)' }}
-                  onBlur={e => { e.target.style.borderColor='#E8E4F5'; e.target.style.boxShadow='none' }}
-                />
+                <label style={{ fontSize: 12, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 500, letterSpacing: 0.3 }}>NOME</label>
+                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Como você quer ser chamado?" style={{
+                  width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15, color: '#E9E4FF',
+                  background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+                }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }} />
               </div>
             )}
+
             <div>
-              <label style={{fontSize:13, color:'#6D6A8A', display:'block', marginBottom:6, fontWeight:500}}>E-mail</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com" style={inputStyle}
-                onFocus={e => { e.target.style.borderColor='#7C3AED'; e.target.style.boxShadow='0 0 0 3px rgba(124,58,237,0.08)' }}
-                onBlur={e => { e.target.style.borderColor='#E8E4F5'; e.target.style.boxShadow='none' }}
-              />
-            </div>
-            <div>
-              <label style={{fontSize:13, color:'#6D6A8A', display:'block', marginBottom:6, fontWeight:500}}>Senha</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder={mode==='signup' ? 'Mínimo 8 caracteres' : '••••••••'}
-                onKeyDown={e => e.key==='Enter' && handleSubmit()} style={inputStyle}
-                onFocus={e => { e.target.style.borderColor='#7C3AED'; e.target.style.boxShadow='0 0 0 3px rgba(124,58,237,0.08)' }}
-                onBlur={e => { e.target.style.borderColor='#E8E4F5'; e.target.style.boxShadow='none' }}
-              />
+              <label style={{ fontSize: 12, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 500, letterSpacing: 0.3 }}>E-MAIL</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" style={{
+                width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15, color: '#E9E4FF',
+                background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+                fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+              }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }} />
             </div>
 
-            {error && <div style={{background:'#FFF1F0', border:'1px solid #FFCCC7', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#CF1322'}}>{error}</div>}
-            {success && <div style={{background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#166534'}}>{success}</div>}
+            <div>
+              <label style={{ fontSize: 12, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 500, letterSpacing: 0.3 }}>SENHA</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                placeholder={mode === 'signup' ? 'Mínimo 8 caracteres' : '••••••••'}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()} style={{
+                  width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15, color: '#E9E4FF',
+                  background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+                }}
+                onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }} />
+            </div>
+
+            {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#FCA5A5' }}>{error}</div>}
+            {success && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#86EFAC' }}>{success}</div>}
 
             <button onClick={handleSubmit} disabled={loading} style={{
-              width:'100%', padding:'15px', borderRadius:14, border:'none',
-              cursor: loading ? 'not-allowed':'pointer',
-              background: loading ? '#C4B5FD' : 'linear-gradient(135deg, #7C3AED, #5B21B6)',
-              color:'white', fontSize:15, fontWeight:600,
-              fontFamily:'Plus Jakarta Sans, sans-serif', transition:'all 0.2s',
-              boxShadow: loading ? 'none' : '0 4px 16px rgba(124,58,237,0.35)',
-              marginTop:4,
-            }}>
-              {loading ? 'Aguarde...' : mode==='login' ? 'Entrar' : 'Criar conta'}
+              width: '100%', padding: '16px', borderRadius: 16, border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              background: loading ? '#3B2E6E' : '#8B5CF6',
+              color: 'white', fontSize: 15, fontWeight: 600, marginTop: 4,
+              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s', letterSpacing: 0.2,
+              boxShadow: loading ? 'none' : '0 8px 24px rgba(139,92,246,0.4)',
+            }}
+            onMouseEnter={e => { if (!loading) (e.target as HTMLElement).style.background = '#7C3AED' }}
+            onMouseLeave={e => { if (!loading) (e.target as HTMLElement).style.background = '#8B5CF6' }}>
+              {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </div>
-
-          <p style={{textAlign:'center', fontSize:12, color:'#B0ABCC', marginTop:24, marginBottom:0, lineHeight:1.5}}>
-            Não substitui acompanhamento psicológico profissional.
-          </p>
         </div>
+
+        <p style={{ marginTop: 20, fontSize: 13, color: '#4A4268', textAlign: 'center' }}>
+          Não substitui acompanhamento psicológico profissional.
+        </p>
       </div>
     </div>
   )
