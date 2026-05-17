@@ -1,0 +1,13 @@
+{
+  "name": "Claramente",
+  "short_name": "Claramente",
+  "description": "Seu espaço sagrado de introspecção e autoconhecimento",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0B1A",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
