@@ -38,7 +38,7 @@ export function useChat() {
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }))
-      const response = await sendToAI(content, history)
+      const response = await sendToAI(content, history, user.id)
 
       if (response.isCrisis) setIsCrisis(true)
 
