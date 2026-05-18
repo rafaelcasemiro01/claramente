@@ -5,32 +5,27 @@ import { validateEmail } from '@/lib/emailValidator'
 
 type Mode = 'login' | 'signup' | 'forgot'
 
-interface PasswordRule {
-  label: string
-  test: (p: string) => boolean
-}
-
-const PASSWORD_RULES: PasswordRule[] = [
-  { label: 'Mínimo 8 caracteres',             test: p => p.length >= 8 },
-  { label: 'Uma letra maiúscula (A-Z)',         test: p => /[A-Z]/.test(p) },
-  { label: 'Um número (0-9)',                   test: p => /[0-9]/.test(p) },
-  { label: 'Um caractere especial (!@#$%&*)',   test: p => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+const PASSWORD_RULES = [
+  { label: 'Mínimo 8 caracteres',           test: (p: string) => p.length >= 8 },
+  { label: 'Uma letra maiúscula (A-Z)',       test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'Um número (0-9)',                 test: (p: string) => /[0-9]/.test(p) },
+  { label: 'Um caractere especial (!@#$%&*)', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
 ]
 
-function passwordStrength(p: string): { score: number; label: string; color: string } {
-  const passed = PASSWORD_RULES.filter(r => r.test(p)).length
-  if (passed <= 1) return { score: 1, label: 'Muito fraca', color: '#EF4444' }
-  if (passed === 2) return { score: 2, label: 'Fraca',      color: '#F59E0B' }
-  if (passed === 3) return { score: 3, label: 'Boa',        color: '#8B5CF6' }
-  return             { score: 4, label: 'Forte ✓',          color: '#22C55E' }
+function getStrength(p: string) {
+  const score = PASSWORD_RULES.filter(r => r.test(p)).length
+  if (score <= 1) return { score: 1, label: 'Muito fraca', color: '#EF4444' }
+  if (score === 2) return { score: 2, label: 'Fraca',      color: '#F59E0B' }
+  if (score === 3) return { score: 3, label: 'Boa',        color: '#8B5CF6' }
+  return             { score: 4, label: 'Forte ✓',         color: '#22C55E' }
 }
 
-function CrystalLogo({ size = 60 }: { size?: number }) {
+function CrystalLogo({ size = 56 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
       <path d="M28 4L50 18V38L28 52L6 38V18Z" fill="rgba(255,255,255,0.15)" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
       <path d="M28 4L6 18H50Z" fill="rgba(255,255,255,0.3)"/>
-      <line x1="6" y1="18" x2="28" y2="30" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2"/>
+      <line x1="6"  y1="18" x2="28" y2="30" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2"/>
       <line x1="50" y1="18" x2="28" y2="30" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2"/>
       <circle cx="28" cy="30" r="3" fill="white"/>
     </svg>
@@ -47,32 +42,29 @@ export default function Landing() {
   const [error, setError]     = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showRules, setShowRules] = useState(false)
   const [emailVal, setEmailVal] = useState<{ message: string; type: string }>({ message: '', type: 'idle' })
 
-  const strength = password.length > 0 ? passwordStrength(password) : null
+  // Calculado direto — sem estado intermediário
+  const strength = password.length > 0 ? getStrength(password) : null
+  const showPasswordRules = mode === 'signup' && password.length > 0
 
   function switchMode(m: Mode) {
     setMode(m)
-    setError(''); setSuccess(''); setPassword('')
-    setShowRules(false)
+    setError(''); setSuccess('')
+    setPassword('')
     setEmailVal({ message: '', type: 'idle' })
   }
 
   function handleEmailChange(value: string) {
     setEmail(value)
-    if (value.length > 4) {
-      const result = validateEmail(value)
-      setEmailVal(result)
-    } else {
-      setEmailVal({ message: '', type: 'idle' })
-    }
+    if (value.length > 4) setEmailVal(validateEmail(value))
+    else setEmailVal({ message: '', type: 'idle' })
   }
 
   async function handleSubmit() {
     setError(''); setSuccess(''); setLoading(true)
 
-    // Validar e-mail em todos os modos
+    // Validar e-mail
     const emailCheck = validateEmail(email)
     if (!emailCheck.valid) {
       setEmailVal(emailCheck)
@@ -87,20 +79,20 @@ export default function Landing() {
     } else if (mode === 'signup') {
       if (!name.trim()) { setError('Informe seu nome.'); setLoading(false); return }
 
-      const failedRules = PASSWORD_RULES.filter(r => !r.test(password))
-      if (failedRules.length > 0) {
-        setError(`Senha inválida: ${failedRules[0].label}.`)
+      const failed = PASSWORD_RULES.filter(r => !r.test(password))
+      if (failed.length > 0) {
+        setError(`Senha inválida: ${failed[0].label}.`)
         setLoading(false); return
       }
 
       const { error } = await signUp(email, password, name)
       if (error) {
         const msg = (error as { message?: string })?.message || ''
-        if (msg.includes('already registered') || msg.includes('already exists')) {
-          setError('Este e-mail já está cadastrado. Tente fazer login.')
-        } else {
-          setError('Erro ao criar conta. Tente novamente.')
-        }
+        setError(
+          msg.includes('already registered') || msg.includes('already exists')
+            ? 'Este e-mail já está cadastrado. Tente fazer login.'
+            : 'Erro ao criar conta. Tente novamente.'
+        )
       } else {
         setSuccess('Conta criada com sucesso! Faça login para entrar.')
         setName(''); setPassword('')
@@ -111,20 +103,18 @@ export default function Landing() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
-      if (error) {
-        setError('Erro ao enviar e-mail. Verifique o endereço.')
-      } else {
-        setSuccess('Link enviado! Verifique sua caixa de entrada e spam.')
-      }
+      if (error) setError('Erro ao enviar e-mail. Verifique o endereço.')
+      else setSuccess('Link enviado! Verifique sua caixa de entrada e spam.')
     }
 
     setLoading(false)
   }
 
-  const inputBase: React.CSSProperties = {
+  const inp: React.CSSProperties = {
     width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15,
-    color: '#E9E4FF', background: '#1E1840', border: '1px solid rgba(139,92,246,0.15)',
-    outline: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+    color: '#E9E4FF', background: '#1E1840',
+    border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
+    fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
   }
 
   return (
@@ -143,24 +133,18 @@ export default function Landing() {
         }
       `}</style>
 
-      {/* Glow */}
       <div style={{ position: 'fixed', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '80vw', maxWidth: 500, height: '60vh', borderRadius: '50%', background: 'radial-gradient(circle, rgba(109,40,217,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      {/* Header */}
       <header style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1 }}>
         <svg width="24" height="24" viewBox="0 0 56 56" fill="none">
           <path d="M28 4L50 18V38L28 52L6 38V18Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinejoin="round"/>
           <circle cx="28" cy="30" r="2.5" fill="rgba(255,255,255,0.5)"/>
         </svg>
-        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 16, color: 'rgba(255,255,255,0.6)' }}>
-          Claramente
-        </span>
+        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 16, color: 'rgba(255,255,255,0.6)' }}>Claramente</span>
       </header>
 
-      {/* Conteúdo */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 20px 40px', position: 'relative', zIndex: 1 }}>
 
-        {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
             <div style={{ position: 'absolute', inset: -20, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)' }} />
@@ -174,7 +158,6 @@ export default function Landing() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="land-card" style={{ width: '100%', maxWidth: 420, background: '#13102A', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' }}>
 
           {/* Tabs */}
@@ -195,10 +178,8 @@ export default function Landing() {
             </div>
           )}
 
-          {/* Formulário */}
           <div style={{ padding: '24px 20px 20px' }}>
 
-            {/* Header modo forgot */}
             {mode === 'forgot' && (
               <div style={{ marginBottom: 20 }}>
                 <button onClick={() => switchMode('login')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6480', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, fontFamily: "'DM Sans', sans-serif" }}>
@@ -207,23 +188,19 @@ export default function Landing() {
                   </svg>
                   Voltar ao login
                 </button>
-                <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20, color: 'white', marginBottom: 6 }}>
-                  Recuperar senha
-                </h2>
-                <p style={{ fontSize: 13, color: '#6B6480', lineHeight: 1.6 }}>
-                  Enviaremos um link para criar uma nova senha.
-                </p>
+                <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20, color: 'white', marginBottom: 6 }}>Recuperar senha</h2>
+                <p style={{ fontSize: 13, color: '#6B6480', lineHeight: 1.6 }}>Enviaremos um link para criar uma nova senha.</p>
               </div>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              {/* Nome — só no signup */}
+              {/* Nome */}
               {mode === 'signup' && (
                 <div>
                   <label style={{ fontSize: 11, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase' }}>Nome</label>
                   <input type="text" value={name} onChange={e => setName(e.target.value)}
-                    placeholder="Como você quer ser chamado?" style={inputBase}
+                    placeholder="Como você quer ser chamado?" style={inp}
                     onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
                     onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }}
                   />
@@ -235,43 +212,33 @@ export default function Landing() {
                 <label style={{ fontSize: 11, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase' }}>E-mail</label>
                 <div style={{ position: 'relative' }}>
                   <input
-                    type="email"
-                    value={email}
+                    type="email" value={email}
                     onChange={e => handleEmailChange(e.target.value)}
                     onBlur={() => email.length > 0 && setEmailVal(validateEmail(email))}
                     placeholder="seu@email.com"
                     style={{
-                      ...inputBase,
+                      ...inp,
                       paddingRight: emailVal.type !== 'idle' ? '44px' : '18px',
-                      borderColor: emailVal.type === 'valid' ? 'rgba(34,197,94,0.5)'
-                        : emailVal.type === 'error' ? 'rgba(239,68,68,0.5)'
-                        : 'rgba(139,92,246,0.15)',
+                      borderColor: emailVal.type === 'valid'  ? 'rgba(34,197,94,0.5)'
+                        :           emailVal.type === 'error' ? 'rgba(239,68,68,0.5)'
+                        :           'rgba(139,92,246,0.15)',
                     }}
                     onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
                     onBlurCapture={e => {
                       e.target.style.background = '#1E1840'
-                      e.target.style.borderColor = emailVal.type === 'valid' ? 'rgba(34,197,94,0.5)'
-                        : emailVal.type === 'error' ? 'rgba(239,68,68,0.5)'
-                        : 'rgba(139,92,246,0.15)'
+                      e.target.style.borderColor = emailVal.type === 'valid'  ? 'rgba(34,197,94,0.5)'
+                        :                           emailVal.type === 'error' ? 'rgba(239,68,68,0.5)'
+                        :                           'rgba(139,92,246,0.15)'
                     }}
                   />
-                  {/* Ícone de status */}
                   {emailVal.type !== 'idle' && (
-                    <div style={{
-                      position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                      fontSize: 15, pointerEvents: 'none', fontWeight: 600,
-                      color: emailVal.type === 'valid' ? '#86EFAC' : '#FCA5A5',
-                    }}>
+                    <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 15, fontWeight: 600, pointerEvents: 'none', color: emailVal.type === 'valid' ? '#86EFAC' : '#FCA5A5' }}>
                       {emailVal.type === 'valid' ? '✓' : '✗'}
                     </div>
                   )}
                 </div>
-                {/* Mensagem inline */}
                 {emailVal.message && (
-                  <p style={{
-                    fontSize: 11, marginTop: 5, transition: 'color 0.2s',
-                    color: emailVal.type === 'valid' ? '#86EFAC' : '#FCA5A5',
-                  }}>
+                  <p style={{ fontSize: 11, marginTop: 5, color: emailVal.type === 'valid' ? '#86EFAC' : '#FCA5A5' }}>
                     {emailVal.message}
                   </p>
                 )}
@@ -289,50 +256,56 @@ export default function Landing() {
                     )}
                   </div>
                   <input
-                    type="password"
-                    value={password}
-                    onChange={e => { setPassword(e.target.value); if (mode === 'signup') setShowRules(true) }}
-                    onFocus={() => { if (mode === 'signup') setShowRules(true) }}
+                    type="password" value={password}
+                    onChange={e => setPassword(e.target.value)}
                     placeholder={mode === 'signup' ? 'Crie uma senha forte' : '••••••••'}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    style={inputBase}
-                    onFocusCapture={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
-                    onBlurCapture={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }}
+                    style={inp}
+                    onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
+                    onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }}
                   />
 
-                  {/* Regras de senha — somente no signup */}
-                  {mode === 'signup' && showRules && (
+                  {/* ✅ Regras aparecem automaticamente ao digitar */}
+                  {showPasswordRules && (
                     <div style={{ marginTop: 10, background: 'rgba(139,92,246,0.06)', borderRadius: 12, padding: '12px 14px', border: '0.5px solid rgba(139,92,246,0.15)' }}>
+
                       {/* Barra de força */}
-                      {password.length > 0 && strength && (
-                        <div style={{ marginBottom: 10 }}>
-                          <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
+                      {strength && (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ display: 'flex', gap: 3, marginBottom: 5 }}>
                             {[1, 2, 3, 4].map(i => (
-                              <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, transition: 'background 0.3s', background: i <= strength.score ? strength.color : 'rgba(255,255,255,0.08)' }} />
+                              <div key={i} style={{
+                                flex: 1, height: 4, borderRadius: 2,
+                                transition: 'background 0.3s',
+                                background: i <= strength.score ? strength.color : 'rgba(255,255,255,0.08)',
+                              }} />
                             ))}
                           </div>
-                          <span style={{ fontSize: 11, color: strength.color }}>{strength.label}</span>
+                          <span style={{ fontSize: 11, color: strength.color, fontWeight: 500 }}>
+                            {strength.label}
+                          </span>
                         </div>
                       )}
+
                       {/* Checklist */}
                       {PASSWORD_RULES.map(rule => {
                         const ok = rule.test(password)
                         return (
-                          <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                          <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                             <div style={{
-                              width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                               background: ok ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)',
-                              border: `1px solid ${ok ? '#22C55E' : 'rgba(255,255,255,0.1)'}`,
+                              border: `1.5px solid ${ok ? '#22C55E' : 'rgba(255,255,255,0.12)'}`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              transition: 'all 0.2s',
+                              transition: 'all 0.25s',
                             }}>
                               {ok && (
-                                <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                                <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
                                   <polyline points="2,6 5,9 10,3" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                               )}
                             </div>
-                            <span style={{ fontSize: 11, color: ok ? '#86EFAC' : '#6B6480', transition: 'color 0.2s' }}>
+                            <span style={{ fontSize: 12, color: ok ? '#86EFAC' : '#6B6480', transition: 'color 0.25s' }}>
                               {rule.label}
                             </span>
                           </div>
@@ -343,7 +316,7 @@ export default function Landing() {
                 </div>
               )}
 
-              {/* Erro e sucesso */}
+              {/* Feedback */}
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#FCA5A5', lineHeight: 1.5 }}>
                   {error}
@@ -355,7 +328,6 @@ export default function Landing() {
                 </div>
               )}
 
-              {/* Botão principal */}
               <button onClick={handleSubmit} disabled={loading} style={{
                 width: '100%', padding: '15px', borderRadius: 14, border: 'none', marginTop: 4,
                 cursor: loading ? 'not-allowed' : 'pointer',
