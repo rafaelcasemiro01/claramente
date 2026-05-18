@@ -11,128 +11,176 @@ import {
 } from '@/components/Icons'
 import type { ConversationItem } from '@/hooks/useChat'
 
-// ─── Waveform JARVIS ────────────────────────────────────────────
-function JarvisWaveform({ color = '#8B5CF6', bars = 12 }: { color?: string; bars?: number }) {
-  const heights = [0.35, 0.75, 0.55, 1.0, 0.65, 0.9, 0.45, 0.8, 0.5, 0.85, 0.4, 0.6]
-  return (
-    <div style={{ display: 'flex', gap: 2.5, alignItems: 'center', height: 26, padding: '0 2px' }}>
-      {Array.from({ length: bars }).map((_, i) => (
-        <div key={i} style={{
-          width: 2.5, borderRadius: 2, background: color,
-          animation: `wvBar ${0.5 + heights[i % heights.length] * 0.5}s ${i * 0.055}s infinite ease-in-out alternate`,
-          height: `${heights[i % heights.length] * 18 + 3}px`,
-          opacity: 0.65 + heights[i % heights.length] * 0.35,
-        }} />
-      ))}
-    </div>
-  )
+// ─── NEURAL BACKGROUND ─────────────────────────────────────────
+function NeuralBackground() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    let W = canvas.width  = window.innerWidth
+    let H = canvas.height = window.innerHeight
+    const nodes = Array.from({ length: 38 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.22,
+      r: Math.random() * 1.2 + 0.4, pulse: Math.random() * Math.PI * 2,
+    }))
+    let frame: number
+    function draw() {
+      ctx.clearRect(0, 0, W, H)
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy; n.pulse += 0.018
+        if (n.x < 0 || n.x > W) n.vx *= -1
+        if (n.y < 0 || n.y > H) n.vy *= -1
+      })
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x
+          const dy = nodes[i].y - nodes[j].y
+          const d  = Math.sqrt(dx * dx + dy * dy)
+          if (d < 125) {
+            ctx.beginPath()
+            ctx.moveTo(nodes[i].x, nodes[i].y)
+            ctx.lineTo(nodes[j].x, nodes[j].y)
+            ctx.strokeStyle = `rgba(124,58,237,${(1 - d / 125) * 0.055})`
+            ctx.lineWidth = 0.5; ctx.stroke()
+          }
+        }
+      }
+      nodes.forEach(n => {
+        const p = Math.sin(n.pulse) * 0.5 + 0.5
+        ctx.beginPath()
+        ctx.arc(n.x, n.y, n.r * (1 + p * 0.4), 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(139,92,246,${0.07 + p * 0.05})`
+        ctx.fill()
+      })
+      frame = requestAnimationFrame(draw)
+    }
+    draw()
+    const onResize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight }
+    window.addEventListener('resize', onResize)
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', onResize) }
+  }, [])
+  return <canvas ref={ref} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.65 }} />
 }
 
-// ─── Waveform gravação ──────────────────────────────────────────
-function RecordWave() {
-  return (
-    <div style={{ display: 'flex', gap: 2, alignItems: 'center', height: 20 }}>
-      {Array.from({ length: 16 }).map((_, i) => (
-        <div key={i} style={{
-          width: 2, borderRadius: 2, background: '#EF4444',
-          animation: `wvBar ${0.3 + (i % 5) * 0.08}s ${i * 0.04}s infinite ease-in-out alternate`,
-          height: `${8 + (i % 4) * 5}px`, opacity: 0.7,
-        }} />
-      ))}
-    </div>
-  )
-}
-
-// ─── Logo cristal com anéis ─────────────────────────────────────
-function CrystalLogo({ size = 24, light = false, spin = false }: { size?: number; light?: boolean; spin?: boolean }) {
-  const c  = light ? 'rgba(255,255,255,0.88)' : '#8B5CF6'
-  const cf = light ? 'rgba(255,255,255,0.15)'  : 'rgba(139,92,246,0.15)'
-  const cm = light ? 'rgba(255,255,255,0.32)'  : 'rgba(139,92,246,0.32)'
-  const cl = light ? 'rgba(255,255,255,0.55)'  : 'rgba(139,92,246,0.6)'
+// ─── AI ORB ─────────────────────────────────────────────────────
+type OrbState = 'idle' | 'listening' | 'thinking' | 'speaking'
+function AIOrb({ state = 'idle', size = 96 }: { state?: OrbState; size?: number }) {
+  const C: Record<OrbState, { core: string; glow: string; ring: string }> = {
+    idle:      { core: '#7C3AED', glow: 'rgba(124,58,237,0.14)',  ring: 'rgba(124,58,237,0.1)' },
+    listening: { core: '#818CF8', glow: 'rgba(129,140,248,0.18)', ring: 'rgba(129,140,248,0.13)' },
+    thinking:  { core: '#6D28D9', glow: 'rgba(109,40,217,0.22)',  ring: 'rgba(109,40,217,0.15)' },
+    speaking:  { core: '#A78BFA', glow: 'rgba(167,139,250,0.18)', ring: 'rgba(167,139,250,0.1)' },
+  }
+  const c = C[state]
   return (
     <div style={{ position: 'relative', width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      {spin && (
-        <>
-          <div style={{ position: 'absolute', width: size * 2.7, height: size * 2.7, borderRadius: '50%', border: `0.8px dashed ${light ? 'rgba(255,255,255,0.18)' : 'rgba(139,92,246,0.22)'}`, animation: 'jRing1 14s linear infinite', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', width: size * 1.9, height: size * 1.9, borderRadius: '50%', border: `0.5px solid ${light ? 'rgba(255,255,255,0.12)' : 'rgba(139,92,246,0.16)'}`, animation: 'jRing2 8s linear infinite', pointerEvents: 'none' }} />
-        </>
+      <div style={{ position: 'absolute', width: size * 2.5, height: size * 2.5, borderRadius: '50%', background: `radial-gradient(circle, ${c.glow} 0%, transparent 65%)`, animation: 'orbBreath 5s ease-in-out infinite', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: size * 1.72, height: size * 1.72, borderRadius: '50%', border: `0.5px dashed ${c.ring}`, animation: 'jRing1 24s linear infinite', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: size * 1.36, height: size * 1.36, borderRadius: '50%', border: `0.5px solid ${c.ring}`, animation: 'jRing2 15s linear infinite', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', width: size * 1.06, height: size * 1.06, borderRadius: '50%', border: `1px solid ${c.ring}`, boxShadow: `0 0 20px ${c.glow}, inset 0 0 20px ${c.glow}`, animation: 'orbBreath 5s ease-in-out infinite 1.5s', pointerEvents: 'none' }} />
+      <div style={{ width: size * 0.68, height: size * 0.68, borderRadius: '50%', background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.14) 0%, transparent 50%), radial-gradient(circle, ${c.core}28 0%, ${c.core}08 60%, transparent 80%)`, border: `1px solid ${c.core}38`, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'orbBreath 5s ease-in-out infinite', boxShadow: `0 0 32px ${c.glow}, inset 0 1px 0 rgba(255,255,255,0.08)` }}>
+        <Crystal size={size * 0.28} color="rgba(255,255,255,0.7)" dim="rgba(255,255,255,0.07)" mid="rgba(255,255,255,0.1)" line="rgba(255,255,255,0.3)" />
+      </div>
+      {state === 'speaking' && (
+        <div style={{ position: 'absolute', bottom: -18, display: 'flex', gap: 2, alignItems: 'flex-end', height: 14 }}>
+          {[0.4, 0.8, 1, 0.7, 0.5, 0.9, 0.6].map((h, i) => (
+            <div key={i} style={{ width: 2, borderRadius: 2, background: c.core, opacity: 0.65, animation: `wvBar ${0.35 + h * 0.4}s ${i * 0.05}s infinite ease-in-out alternate`, height: `${h * 12}px` }} />
+          ))}
+        </div>
       )}
-      <Crystal size={size} color={c} dim={cf} mid={cm} line={cl} />
     </div>
   )
 }
 
-// ─── Boot sequence ──────────────────────────────────────────────
+// ─── TYPEWRITER ──────────────────────────────────────────────────
+function TypewriterText({ text, speed = 25, onComplete }: { text: string; speed?: number; onComplete?: () => void }) {
+  const [shown, setShown] = useState('')
+  const [done, setDone]   = useState(false)
+  useEffect(() => {
+    setShown(''); setDone(false); let i = 0
+    const iv = setInterval(() => {
+      if (i < text.length) { setShown(text.slice(0, ++i)) }
+      else { clearInterval(iv); setDone(true); onComplete?.() }
+    }, speed)
+    return () => clearInterval(iv)
+  }, [text])
+  return <span>{shown}{!done && <span style={{ animation: 'blink 0.9s infinite', opacity: 0.6 }}>|</span>}</span>
+}
+
+// ─── WAVEFORM ────────────────────────────────────────────────────
+function JarvisWave({ color = 'rgba(139,92,246,0.8)', n = 10 }: { color?: string; n?: number }) {
+  const H = [0.35, 0.75, 0.55, 1, 0.65, 0.9, 0.45, 0.8, 0.5, 0.85, 0.4, 0.6]
+  return (
+    <div style={{ display: 'flex', gap: 2, alignItems: 'center', height: 22, padding: '0 2px' }}>
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i} style={{ width: 2, borderRadius: 2, background: color, height: `${H[i % H.length] * 16 + 3}px`, opacity: 0.6 + H[i % H.length] * 0.4, animation: `wvBar ${0.45 + H[i % H.length] * 0.45}s ${i * 0.055}s infinite ease-in-out alternate` }} />
+      ))}
+    </div>
+  )
+}
+
+function RecordWave() {
+  return (
+    <div style={{ display: 'flex', gap: 1.5, alignItems: 'center', height: 18 }}>
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div key={i} style={{ width: 1.5, borderRadius: 2, background: '#EF4444', opacity: 0.65, animation: `wvBar ${0.28 + (i % 5) * 0.07}s ${i * 0.035}s infinite ease-in-out alternate`, height: `${7 + (i % 4) * 4}px` }} />
+      ))}
+    </div>
+  )
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────
 function BootSequence({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState(0)
-  const [prog, setProg]   = useState(0)
+  const [prog,  setProg]  = useState(0)
   const [lines, setLines] = useState<string[]>([])
-
-  const bootLines = [
-    'SISTEMA NEURAL INICIALIZADO',
-    'MEMÓRIA PERSISTENTE CARREGADA',
-    'PROTOCOLOS DE INTROSPECÇÃO ATIVOS',
-    'MÓDULO DE ANÁLISE EMOCIONAL ONLINE',
-    'SÍNTESE DE VOZ ATIVA',
-    'CLARAMENTE v2.0 // PRONTO',
-  ]
-
+  const bootLines = ['SISTEMA NEURAL INICIALIZADO','MEMÓRIA PERSISTENTE CARREGADA','PROTOCOLOS DE INTROSPECÇÃO ATIVOS','SÍNTESE DE VOZ ATIVA','CLARAMENTE v2.0 // PRONTO']
   useEffect(() => {
     audio.init()
     const t1 = setTimeout(() => { setPhase(1); audio.playBoot() }, 200)
     const t2 = setTimeout(() => setPhase(2), 700)
-    bootLines.forEach((line, i) => setTimeout(() => setLines(p => [...p, line]), 950 + i * 260))
-    let p = 0
-    const iv = setInterval(() => { p += 2; setProg(p); if (p >= 100) clearInterval(iv) }, 32)
-    const t3 = setTimeout(() => setPhase(3), 2700)
-    const t4 = setTimeout(onComplete, 3300)
-    return () => { [t1, t2, t3, t4].forEach(clearTimeout); clearInterval(iv) }
+    bootLines.forEach((ln, i) => setTimeout(() => setLines(p => [...p, ln]), 900 + i * 270))
+    let p = 0; const iv = setInterval(() => { p += 2; setProg(p); if (p >= 100) clearInterval(iv) }, 30)
+    const t3 = setTimeout(() => setPhase(3), 2600)
+    const t4 = setTimeout(onComplete, 3200)
+    return () => { [t1,t2,t3,t4].forEach(clearTimeout); clearInterval(iv) }
   }, [])
-
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200, background: '#050410',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      opacity: phase === 3 ? 0 : 1, transition: phase === 3 ? 'opacity 0.6s ease' : 'none',
-      fontFamily: 'monospace',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(139,92,246,0.18) 1px, transparent 1px)', backgroundSize: '26px 26px', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.7), transparent)', animation: 'scanLine 2.2s ease-in-out infinite', pointerEvents: 'none' }} />
-
-      <div style={{ marginBottom: 36, opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'scale(1)' : 'scale(0.5)', transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)' }}>
-        <CrystalLogo size={72} light spin={phase >= 2} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#030208', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: phase === 3 ? 0 : 1, transition: 'opacity 0.7s ease', fontFamily: 'monospace' }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(124,58,237,0.15) 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.6),transparent)', animation: 'scanLine 2s ease-in-out infinite', pointerEvents: 'none' }} />
+      <div style={{ marginBottom: 40, opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'scale(1)' : 'scale(0.4)', transition: 'all 0.7s cubic-bezier(0.34,1.56,0.64,1)' }}>
+        <AIOrb state="idle" size={80} />
       </div>
-
-      <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px,5vw,40px)', color: 'white', letterSpacing: 10, textTransform: 'uppercase', marginBottom: 6, opacity: phase >= 1 ? 1 : 0, transition: 'opacity 0.6s 0.3s', textShadow: '0 0 28px rgba(139,92,246,0.9)' }}>
+      <h1 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 'clamp(24px,5vw,38px)', color: 'rgba(255,255,255,0.9)', letterSpacing: 12, textTransform: 'uppercase', marginBottom: 6, opacity: phase >= 1 ? 1 : 0, transition: 'opacity 0.6s 0.3s', textShadow: '0 0 40px rgba(124,58,237,0.7)' }}>
         Claramente
       </h1>
-      <p style={{ fontSize: 10, color: '#6B6480', letterSpacing: 4, marginBottom: 36, opacity: phase >= 1 ? 0.8 : 0, transition: 'opacity 0.6s 0.5s' }}>
-        SISTEMA DE INTROSPECÇÃO IA
+      <p style={{ fontSize: 9, color: 'rgba(124,58,237,0.7)', letterSpacing: 4, marginBottom: 36, opacity: phase >= 1 ? 1 : 0, transition: 'opacity 0.6s 0.5s', textTransform: 'uppercase' }}>
+        sistema de introspecção ia
       </p>
-
-      <div style={{ width: 320, maxWidth: '88vw', marginBottom: 24 }}>
+      <div style={{ width: 300, maxWidth: '86vw', marginBottom: 24 }}>
         {lines.map((ln, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5, animation: 'bootLn 0.3s ease forwards' }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, background: i === lines.length - 1 ? '#8B5CF6' : '#22C55E', animation: i === lines.length - 1 ? 'pulse 0.9s infinite' : 'none' }} />
-            <span style={{ fontSize: 10, color: i === lines.length - 1 ? '#A78BFA' : '#3A8A58', letterSpacing: 0.8 }}>{ln}</span>
+            <div style={{ width: 4, height: 4, borderRadius: '50%', flexShrink: 0, background: i === lines.length - 1 ? '#7C3AED' : '#22C55E', animation: i === lines.length - 1 ? 'blink 1s infinite' : 'none' }} />
+            <span style={{ fontSize: 9, color: i === lines.length - 1 ? 'rgba(167,139,250,0.9)' : 'rgba(34,197,94,0.6)', letterSpacing: 0.8 }}>{ln}</span>
           </div>
         ))}
       </div>
-
-      <div style={{ width: 320, maxWidth: '88vw' }}>
-        <div style={{ height: '1.5px', background: 'rgba(139,92,246,0.12)', borderRadius: 2, overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: 'linear-gradient(90deg, #5B21B6, #A78BFA)', width: `${prog}%`, transition: 'width 0.04s linear', boxShadow: '0 0 8px rgba(139,92,246,0.9)' }} />
+      <div style={{ width: 300, maxWidth: '86vw' }}>
+        <div style={{ height: '1px', background: 'rgba(124,58,237,0.1)', borderRadius: 1, overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: 'linear-gradient(90deg,#4C1D95,#A78BFA)', width: `${prog}%`, transition: 'width 0.04s linear', boxShadow: '0 0 10px rgba(124,58,237,0.8)' }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-          <span style={{ fontSize: 9, color: '#3A3558', letterSpacing: 1 }}>INICIALIZANDO</span>
-          <span style={{ fontSize: 9, color: '#4A4268' }}>{prog}%</span>
+          <span style={{ fontSize: 8, color: 'rgba(124,58,237,0.3)', letterSpacing: 1 }}>INICIALIZANDO</span>
+          <span style={{ fontSize: 8, color: 'rgba(124,58,237,0.4)' }}>{prog}%</span>
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Agrupa conversas ───────────────────────────────────────────
+// ─── GRUPOS ──────────────────────────────────────────────────────
 function groupConversations(convs: ConversationItem[]) {
   const now   = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -146,15 +194,15 @@ function groupConversations(convs: ConversationItem[]) {
   ]
   convs.forEach(c => {
     const d = new Date(c.started_at)
-    if (d >= today)      g[0].items.push(c)
-    else if (d >= yest)  g[1].items.push(c)
-    else if (d >= week)  g[2].items.push(c)
-    else                 g[3].items.push(c)
+    if (d >= today) g[0].items.push(c)
+    else if (d >= yest) g[1].items.push(c)
+    else if (d >= week) g[2].items.push(c)
+    else g[3].items.push(c)
   })
   return g.filter(x => x.items.length > 0)
 }
 
-// ─── Home principal ─────────────────────────────────────────────
+// ─── HOME ────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
   const { profile, signOut }  = useAuth()
@@ -165,24 +213,27 @@ export default function Home() {
     sendMessage, resetChat, loadConversation, startJournaling,
   } = useChat()
 
-  const [input, setInput]               = useState('')
-  const [sidebarOpen, setSidebarOpen]   = useState(false)
-  const [isMuted, setIsMuted]           = useState(false)
-  const [isRecording, setIsRecording]   = useState(false)
-  const [recordingText, setRecordingText] = useState('')
-  const [isSpeaking, setIsSpeaking]     = useState(false)
-  const [uptime, setUptime]             = useState('00:00:00')
-  const [bootDone, setBootDone]         = useState(() =>
-    sessionStorage.getItem('claramente-booted') === 'true'
-  )
+  const [input, setInput]                   = useState('')
+  const [sidebarOpen, setSidebarOpen]       = useState(false)
+  const [isMuted, setIsMuted]               = useState(false)
+  const [isRecording, setIsRecording]       = useState(false)
+  const [recordingText, setRecordingText]   = useState('')
+  const [isSpeaking, setIsSpeaking]         = useState(false)
+  const [uptime, setUptime]                 = useState('00:00:00')
+  const [welcomeDone, setWelcomeDone]       = useState(false)
+  const [bootDone, setBootDone]             = useState(() => sessionStorage.getItem('claramente-booted') === 'true')
 
   const startRef    = useRef(Date.now())
   const bottomRef   = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const prevMsgLen  = useRef(0)
-  const speakTimer  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const speakIv     = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // ── Uptime ──────────────────────────────────────────────────
+  const orbState: OrbState = isRecording ? 'listening' : isTyping ? 'thinking' : isSpeaking ? 'speaking' : 'idle'
+  const firstName = profile?.name?.split(' ')[0] || 'você'
+  const grouped   = groupConversations(conversations)
+
+  // Uptime
   useEffect(() => {
     const iv = setInterval(() => {
       const s  = Math.floor((Date.now() - startRef.current) / 1000)
@@ -194,73 +245,53 @@ export default function Home() {
     return () => clearInterval(iv)
   }, [])
 
-  // ── Scroll ──────────────────────────────────────────────────
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  // Scroll
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
 
-  // ── TRECHO 1 — Boas-vindas por voz (JARVIS) ─────────────────
+  // TRECHO 1 — Boas-vindas narradas
   useEffect(() => {
     if (!bootDone) return
     const timer = setTimeout(() => {
-      speechEngine.speakWelcome(profile?.name?.split(' ')[0])
+      speechEngine.speakWelcome(firstName)
     }, 700)
     return () => clearTimeout(timer)
-  }, [bootDone, profile?.name])
+  }, [bootDone, firstName])
 
-  // ── TRECHO 2 — Fala resposta da IA frase por frase ──────────
+  // TRECHO 2 — Falar respostas da IA
   useEffect(() => {
     if (messages.length > prevMsgLen.current) {
       const newMsgs = messages.slice(prevMsgLen.current)
       const last    = newMsgs[newMsgs.length - 1]
       if (last?.role === 'assistant') {
         audio.playAIResponse()
-        // Pequena pausa antes de falar — soa mais natural
         setTimeout(() => speechEngine.speak(last.content, { rate: 1.02, pitch: 0.92 }), 300)
       }
     }
     prevMsgLen.current = messages.length
   }, [messages])
 
-  // ── Som quando IA começa a processar ────────────────────────
-  useEffect(() => {
-    if (isTyping) { audio.playAIStart(); speechEngine.stop() }
-  }, [isTyping])
+  // Som IA pensando
+  useEffect(() => { if (isTyping) { audio.playAIStart(); speechEngine.stop() } }, [isTyping])
 
-  // ── Monitor estado de fala ──────────────────────────────────
+  // Monitor fala
   useEffect(() => {
-    speakTimer.current = setInterval(() => {
-      setIsSpeaking(speechEngine.isSpeaking())
-    }, 200)
-    return () => { if (speakTimer.current) clearInterval(speakTimer.current) }
+    speakIv.current = setInterval(() => setIsSpeaking(speechEngine.isSpeaking()), 200)
+    return () => { if (speakIv.current) clearInterval(speakIv.current) }
   }, [])
 
-  // ── Handlers ────────────────────────────────────────────────
   const handleMute = useCallback(() => {
-    const next = !isMuted
-    setIsMuted(next)
-    speechEngine.setMuted(next)
-    if (next) speechEngine.stop()
+    const next = !isMuted; setIsMuted(next)
+    speechEngine.setMuted(next); if (next) speechEngine.stop()
     audio.playClick()
   }, [isMuted])
 
   const handleMicToggle = useCallback(() => {
     if (isRecording) {
-      speechEngine.stopRecording()
-      setIsRecording(false)
-      if (recordingText.trim()) {
-        setInput(recordingText.trim())
-        setRecordingText('')
-      }
+      speechEngine.stopRecording(); setIsRecording(false)
+      if (recordingText.trim()) { setInput(recordingText.trim()); setRecordingText('') }
     } else {
       const ok = speechEngine.startRecording(
-        (text, isFinal) => {
-          setRecordingText(text)
-          if (isFinal) {
-            setInput(prev => (prev + ' ' + text).trim())
-            setRecordingText('')
-          }
-        },
+        (text, isFinal) => { setRecordingText(text); if (isFinal) { setInput(p => (p + ' ' + text).trim()); setRecordingText('') } },
         () => setIsRecording(false)
       )
       if (ok) { setIsRecording(true); audio.playClick() }
@@ -268,24 +299,19 @@ export default function Home() {
   }, [isRecording, recordingText])
 
   function autoResize() {
-    const el = textareaRef.current
-    if (!el) return
+    const el = textareaRef.current; if (!el) return
     el.style.height = 'auto'
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
   }
 
   async function handleSend() {
     if (!input.trim() || isTyping) return
-    const text = input.trim()
-    setInput('')
-    setRecordingText('')
+    const text = input.trim(); setInput(''); setRecordingText('')
     if (isRecording) { speechEngine.stopRecording(); setIsRecording(false) }
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-
-    // ── TRECHO 3 — Acknowledgment estilo JARVIS ───────────────
+    // TRECHO 3 — Acknowledgment JARVIS
     audio.playMessageSent()
-    speechEngine.speakAck(profile?.name?.split(' ')[0])
-
+    speechEngine.speakAck(firstName)
     await sendMessage(text)
   }
 
@@ -294,108 +320,106 @@ export default function Home() {
   }
 
   async function handleLoadConv(id: string) {
-    audio.playClick()
-    prevMsgLen.current = 0
-    await loadConversation(id)
-    setSidebarOpen(false)
+    audio.playClick(); prevMsgLen.current = 0
+    await loadConversation(id); setSidebarOpen(false)
   }
 
   async function handleNewChat() {
-    audio.playClick()
-    prevMsgLen.current = 0
-    resetChat()
-    setSidebarOpen(false)
+    audio.playClick(); prevMsgLen.current = 0
+    resetChat(); setSidebarOpen(false)
   }
 
-  // ── TRECHO 4 — Journaling com voz JARVIS ────────────────────
+  // TRECHO 4 — Journaling JARVIS
   async function handleJournaling() {
     audio.playJournaling()
     speechEngine.speakJournalingStart()
     prevMsgLen.current = 0
-    await startJournaling()
-    setSidebarOpen(false)
+    await startJournaling(); setSidebarOpen(false)
   }
 
   function handleBootComplete() {
-    sessionStorage.setItem('claramente-booted', 'true')
-    setBootDone(true)
+    sessionStorage.setItem('claramente-booted', 'true'); setBootDone(true)
   }
 
-  const firstName = profile?.name?.split(' ')[0] || 'você'
-  const grouped   = groupConversations(conversations)
-
-  const SB = {
-    bg:     '#07050F',
-    border: 'rgba(139,92,246,0.1)',
-    text:   'rgba(255,255,255,0.72)',
-    muted:  '#2E2A45',
-    hover:  'rgba(139,92,246,0.08)',
-    active: 'rgba(139,92,246,0.18)',
-  }
-
-  // ─── Sidebar ─────────────────────────────────────────────────
+  // ─── SIDEBAR ─────────────────────────────────────────────────
   function Sidebar() {
     return (
-      <aside style={{ width: 256, flexShrink: 0, background: SB.bg, display: 'flex', flexDirection: 'column', height: '100%', borderRight: `0.5px solid ${SB.border}`, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(139,92,246,0.1) 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
-
+      <aside style={{
+        width: 252, flexShrink: 0, height: '100%',
+        display: 'flex', flexDirection: 'column',
+        background: 'rgba(5,4,16,0.82)',
+        backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
+        borderRight: '0.5px solid rgba(255,255,255,0.05)',
+        position: 'relative',
+      }}>
         {/* Logo */}
-        <div style={{ padding: '16px 16px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `0.5px solid ${SB.border}`, position: 'relative' }}>
-          <CrystalLogo size={24} light spin />
+        <div style={{ padding: '18px 18px 14px', display: 'flex', alignItems: 'center', gap: 11, borderBottom: '0.5px solid rgba(255,255,255,0.04)', position: 'relative' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%)', animation: 'orbBreath 4s ease-in-out infinite', pointerEvents: 'none' }} />
+            <Crystal size={22} color="rgba(255,255,255,0.7)" dim="rgba(255,255,255,0.08)" mid="rgba(255,255,255,0.12)" line="rgba(255,255,255,0.3)" />
+          </div>
           <div>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 14, color: SB.text, margin: 0, letterSpacing: -0.2 }}>Claramente</p>
-            <p style={{ fontSize: 8, color: '#3A3558', margin: 0, letterSpacing: 1.2, fontFamily: 'monospace' }}>SISTEMA ATIVO</p>
+            <p style={{ fontFamily: "'DM Serif Display',serif", fontSize: 14, color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: -0.3 }}>Claramente</p>
+            <p style={{ fontSize: 8, color: 'rgba(124,58,237,0.5)', margin: 0, letterSpacing: 1.5, fontFamily: 'monospace', textTransform: 'uppercase' }}>sistema ativo</p>
           </div>
           {isSpeaking && (
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 1.5, alignItems: 'center', height: 14 }}>
-              {[0.5, 1, 0.7, 0.9, 0.6].map((h, i) => (
-                <div key={i} style={{ width: 2, borderRadius: 1, background: '#8B5CF6', height: `${h * 12}px`, animation: `wvBar ${0.4 + h * 0.3}s ${i * 0.06}s infinite ease-in-out alternate`, opacity: 0.8 }} />
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 1.5, alignItems: 'center', height: 12 }}>
+              {[0.5,1,0.7,0.9,0.6].map((h,i) => (
+                <div key={i} style={{ width: 1.5, borderRadius: 1, background: 'rgba(167,139,250,0.7)', height: `${h*10}px`, animation: `wvBar ${0.35+h*0.3}s ${i*0.06}s infinite ease-in-out alternate` }} />
               ))}
             </div>
           )}
         </div>
 
         {/* Ações */}
-        <div style={{ padding: '10px 10px 6px', display: 'flex', flexDirection: 'column', gap: 5, position: 'relative' }}>
-          <button onClick={handleNewChat} style={{ width: '100%', padding: '9px 12px', background: 'rgba(139,92,246,0.1)', border: '0.5px solid rgba(139,92,246,0.2)', borderRadius: 10, color: '#A78BFA', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontWeight: 500, transition: 'all 0.18s' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.2)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(139,92,246,0.1)')}>
-            <Plus size={14} color="#A78BFA" /> Nova conversa
-          </button>
-          <button onClick={handleJournaling} style={{ width: '100%', padding: '9px 12px', background: 'rgba(167,139,250,0.06)', border: '0.5px solid rgba(167,139,250,0.15)', borderRadius: 10, color: '#C4B5FD', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontWeight: 500, transition: 'all 0.18s' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(167,139,250,0.15)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(167,139,250,0.06)')}>
-            <Sparkle size={13} color="#C4B5FD" /> Journaling guiado
-          </button>
+        <div style={{ padding: '12px 12px 6px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {[
+            { icon: <Plus size={13} color="rgba(167,139,250,0.8)" />, label: 'Nova conversa',    action: handleNewChat,    accent: false },
+            { icon: <Sparkle size={12} color="rgba(196,181,253,0.8)" />, label: 'Journaling guiado', action: handleJournaling, accent: true  },
+          ].map(btn => (
+            <button key={btn.label} onClick={btn.action} style={{
+              width: '100%', padding: '9px 13px',
+              background: btn.accent ? 'rgba(167,139,250,0.06)' : 'rgba(124,58,237,0.08)',
+              border: `0.5px solid ${btn.accent ? 'rgba(167,139,250,0.12)' : 'rgba(124,58,237,0.15)'}`,
+              borderRadius: 11, color: btn.accent ? 'rgba(196,181,253,0.85)' : 'rgba(167,139,250,0.85)',
+              fontSize: 12, display: 'flex', alignItems: 'center', gap: 9,
+              cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 500,
+              transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = btn.accent ? 'rgba(167,139,250,0.14)' : 'rgba(124,58,237,0.16)'; e.currentTarget.style.transform = 'translateX(2px)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = btn.accent ? 'rgba(167,139,250,0.06)' : 'rgba(124,58,237,0.08)'; e.currentTarget.style.transform = 'translateX(0)' }}>
+              {btn.icon}{btn.label}
+            </button>
+          ))}
         </div>
 
-        {/* Lista de conversas */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '2px 8px', position: 'relative' }}>
-          <style>{`::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.18);border-radius:2px}`}</style>
+        {/* Lista conversas */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 10px' }}>
+          <style>{`::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.15);border-radius:2px}`}</style>
           {grouped.length === 0 && (
-            <p style={{ fontSize: 10, color: SB.muted, textAlign: 'center', padding: '28px 12px', lineHeight: 1.8, fontFamily: 'monospace' }}>
-              // NENHUMA SESSÃO<br />// INICIE UMA CONVERSA
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.15)', textAlign: 'center', padding: '28px 12px', lineHeight: 1.9, fontFamily: 'monospace' }}>
+              // NENHUMA SESSÃO<br/>// INICIE UMA CONVERSA
             </p>
           )}
           {grouped.map(group => (
             <div key={group.label}>
-              <p style={{ fontSize: 8, color: SB.muted, fontWeight: 600, letterSpacing: 1.4, textTransform: 'uppercase', padding: '10px 8px 4px', fontFamily: 'monospace' }}>
+              <p style={{ fontSize: 8, color: 'rgba(124,58,237,0.4)', fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', padding: '10px 8px 4px', fontFamily: 'monospace' }}>
                 // {group.label}
               </p>
               {group.items.map(conv => (
                 <button key={conv.id} onClick={() => handleLoadConv(conv.id)} style={{
-                  width: '100%', textAlign: 'left', padding: '7px 10px', borderRadius: 8,
-                  border: 'none', cursor: 'pointer', marginBottom: 1,
-                  background: conversationId === conv.id ? SB.active : 'transparent',
-                  borderLeft: `2px solid ${conversationId === conv.id ? '#8B5CF6' : 'transparent'}`,
-                  transition: 'all 0.15s', display: 'block',
+                  width: '100%', textAlign: 'left', padding: '8px 11px', borderRadius: 9,
+                  border: 'none', cursor: 'pointer', marginBottom: 1, display: 'block',
+                  background: conversationId === conv.id ? 'rgba(124,58,237,0.15)' : 'transparent',
+                  borderLeft: `2px solid ${conversationId === conv.id ? 'rgba(124,58,237,0.6)' : 'transparent'}`,
+                  transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
                 }}
-                  onMouseEnter={e => { if (conversationId !== conv.id) e.currentTarget.style.background = SB.hover }}
-                  onMouseLeave={e => { if (conversationId !== conv.id) e.currentTarget.style.background = 'transparent' }}>
-                  <p style={{ fontSize: 12, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'DM Sans', sans-serif", color: conversationId === conv.id ? '#E9E4FF' : SB.text }}>
+                  onMouseEnter={e => { if (conversationId !== conv.id) { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateX(2px)' } }}
+                  onMouseLeave={e => { if (conversationId !== conv.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateX(0)' } }}>
+                  <p style={{ fontSize: 12, margin: '0 0 1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'DM Sans',sans-serif", color: conversationId === conv.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)' }}>
                     {conv.title}
                   </p>
-                  <p style={{ fontSize: 9, color: SB.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
                     {conv.preview}
                   </p>
                 </button>
@@ -404,35 +428,35 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Status JARVIS */}
-        <div style={{ padding: '8px 16px', borderTop: `0.5px solid ${SB.border}`, borderBottom: `0.5px solid ${SB.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        {/* Status */}
+        <div style={{ padding: '8px 18px', borderTop: '0.5px solid rgba(255,255,255,0.03)', borderBottom: '0.5px solid rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22C55E', animation: 'pulse 2.5s infinite' }} />
-            <span style={{ fontSize: 8, color: '#22C55E', letterSpacing: 1, fontFamily: 'monospace' }}>ONLINE</span>
+            <span style={{ fontSize: 8, color: 'rgba(34,197,94,0.7)', letterSpacing: 1.2, fontFamily: 'monospace', textTransform: 'uppercase' }}>online</span>
           </div>
-          <span style={{ fontSize: 8, color: SB.muted, fontFamily: 'monospace' }}>UP {uptime}</span>
+          <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.18)', fontFamily: 'monospace' }}>UP {uptime}</span>
         </div>
 
         {/* Rodapé */}
-        <div style={{ padding: '10px 12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(139,92,246,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#A78BFA' }}>
+        <div style={{ padding: '10px 14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(124,58,237,0.2)', border: '0.5px solid rgba(124,58,237,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: 'rgba(167,139,250,0.9)' }}>
               {firstName.charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontSize: 11, color: '#6B6480', fontFamily: "'DM Sans', sans-serif" }}>{firstName}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: "'DM Sans',sans-serif" }}>{firstName}</span>
           </div>
           <div style={{ display: 'flex', gap: 2 }}>
             {[
-              { Icon: isDark ? Sun : Moon,             action: toggle,                        title: 'Tema',       color: '#6B6480' },
-              { Icon: isMuted ? VolumeOff : Volume,    action: handleMute,                    title: 'Som',        color: isMuted ? '#EF4444' : '#6B6480' },
-              { Icon: BarChart,                        action: () => navigate('/relatorios'), title: 'Relatórios', color: '#6B6480' },
-              { Icon: Person,                          action: () => navigate('/perfil'),     title: 'Perfil',     color: '#6B6480' },
-              { Icon: LogOut,                          action: signOut,                       title: 'Sair',       color: '#6B6480' },
-            ].map(({ Icon, action, title, color }) => (
-              <button key={title} onClick={action} title={title} style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.18s' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
-                <Icon size={15} color={color} />
+              { Icon: isDark ? Sun : Moon,          action: toggle,                       title: 'Tema',       col: 'rgba(255,255,255,0.3)' },
+              { Icon: isMuted ? VolumeOff : Volume, action: handleMute,                   title: 'Som',        col: isMuted ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.3)' },
+              { Icon: BarChart,                     action: () => navigate('/relatorios'), title: 'Relatórios', col: 'rgba(255,255,255,0.3)' },
+              { Icon: Person,                       action: () => navigate('/perfil'),    title: 'Perfil',     col: 'rgba(255,255,255,0.3)' },
+              { Icon: LogOut,                       action: signOut,                      title: 'Sair',       col: 'rgba(255,255,255,0.3)' },
+            ].map(({ Icon, action, title, col }) => (
+              <button key={title} onClick={action} title={title} style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.18s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                <Icon size={14} color={col} />
               </button>
             ))}
           </div>
@@ -441,186 +465,203 @@ export default function Home() {
     )
   }
 
-  // ─── Render ──────────────────────────────────────────────────
+  // ─── RENDER ──────────────────────────────────────────────────
   return (
     <>
+      <NeuralBackground />
+
+      {/* Atmospheric glows */}
+      <div style={{ position: 'fixed', top: '15%', left: '35%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.04) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0, animation: 'orbBreath 8s ease-in-out infinite' }} />
+      <div style={{ position: 'fixed', bottom: '10%', right: '20%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(109,40,217,0.03) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0, animation: 'orbBreath 10s ease-in-out infinite 3s' }} />
+
       {!bootDone && <BootSequence onComplete={handleBootComplete} />}
 
-      <div style={{ height: '100dvh', display: 'flex', background: t.bg, fontFamily: "'DM Sans', 'Plus Jakarta Sans', sans-serif", position: 'relative', overflow: 'hidden', opacity: bootDone ? 1 : 0, transition: 'opacity 0.5s' }}>
+      <div style={{
+        height: '100dvh', display: 'flex',
+        background: isDark ? 'rgba(3,2,8,0.96)' : 'rgba(8,5,20,0.97)',
+        fontFamily: "'DM Sans','Plus Jakarta Sans',sans-serif",
+        position: 'relative', overflow: 'hidden', zIndex: 1,
+        opacity: bootDone ? 1 : 0, transition: 'opacity 0.6s ease',
+      }}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
           * { box-sizing: border-box; }
-          @keyframes jRing1   { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
-          @keyframes jRing2   { from{transform:rotate(360deg)} to{transform:rotate(0deg)} }
-          @keyframes wvBar    { from{transform:scaleY(0.15)}   to{transform:scaleY(1)} }
-          @keyframes bootLn   { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
-          @keyframes scanLine { 0%{top:-2px;opacity:0} 5%{opacity:0.5} 95%{opacity:0.5} 100%{top:100%;opacity:0} }
-          @keyframes fadeUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-          @keyframes pulse    { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
-          @keyframes msgIn    { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-          @keyframes recPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+          @keyframes orbBreath { 0%,100%{transform:scale(1);opacity:0.8} 50%{transform:scale(1.06);opacity:1} }
+          @keyframes jRing1    { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
+          @keyframes jRing2    { from{transform:rotate(360deg)} to{transform:rotate(0deg)} }
+          @keyframes wvBar     { from{transform:scaleY(0.12)}   to{transform:scaleY(1)} }
+          @keyframes bootLn    { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes scanLine  { 0%{top:-2px;opacity:0} 5%{opacity:0.4} 95%{opacity:0.4} 100%{top:100%;opacity:0} }
+          @keyframes fadeUp    { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes msgIn     { from{opacity:0;transform:translateY(6px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+          @keyframes pulse     { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.12)} }
+          @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
+          @keyframes recPulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.35)} 50%{box-shadow:0 0 0 9px rgba(239,68,68,0)} }
+          @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+          @keyframes glowIn    { from{opacity:0;box-shadow:0 0 0 rgba(124,58,237,0)} to{opacity:1;box-shadow:0 0 30px rgba(124,58,237,0.15)} }
           .sb-desktop { display: none; height: 100%; }
-          .mob-header { display: flex; }
-          @media(min-width:700px) {
-            .sb-desktop { display: flex !important; }
-            .mob-header { display: none !important; }
-          }
-          textarea::placeholder { color: ${t.placeholder} !important; }
-          ::-webkit-scrollbar { width: 3px; }
-          ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.18); border-radius: 3px; }
+          .mob-hdr    { display: flex; }
+          @media(min-width:700px){.sb-desktop{display:flex!important}.mob-hdr{display:none!important}}
+          ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.15);border-radius:2px}
+          textarea::placeholder{color:rgba(255,255,255,0.2)!important}
         `}</style>
 
-        {/* Sidebar desktop */}
+        {/* Sidebar */}
         <div className="sb-desktop"><Sidebar /></div>
-
-        {/* Sidebar mobile overlay */}
         {sidebarOpen && (
           <>
-            <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 }} />
-            <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, animation: 'fadeUp 0.22s ease' }}>
-              <Sidebar />
-            </div>
+            <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, backdropFilter: 'blur(4px)' }} />
+            <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, animation: 'fadeUp 0.22s ease' }}><Sidebar /></div>
           </>
         )}
 
         {/* Área principal */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
 
-          {/* Grid holográfico */}
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: `radial-gradient(${isDark ? 'rgba(139,92,246,0.055)' : 'rgba(139,92,246,0.035)'} 1px, transparent 1px)`, backgroundSize: '24px 24px', pointerEvents: 'none', zIndex: 0 }} />
-
-          {/* Scan line quando IA processa */}
-          {isTyping && (
-            <div style={{ position: 'absolute', left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.55), transparent)', animation: 'scanLine 1.8s ease-in-out infinite', zIndex: 5, pointerEvents: 'none' }} />
-          )}
+          {/* Scan line ao processar */}
+          {isTyping && <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.4),transparent)', animation: 'scanLine 1.8s ease-in-out infinite', zIndex: 5, pointerEvents: 'none' }} />}
 
           {/* Header mobile */}
-          <header className="mob-header" style={{ background: t.header, borderBottom: `0.5px solid ${t.headerBorder}`, padding: '0 16px', height: 56, alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, zIndex: 10, position: 'relative' }}>
+          <header className="mob-hdr" style={{ background: 'rgba(5,4,16,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '0.5px solid rgba(255,255,255,0.04)', padding: '0 16px', height: 54, alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, zIndex: 10, position: 'relative' }}>
             <button onClick={() => setSidebarOpen(true)} style={{ padding: 8, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-              <Menu size={20} color={t.violet} />
+              <Menu size={18} color="rgba(255,255,255,0.5)" />
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CrystalLogo size={20} spin />
-              <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 16, color: t.text }}>
+              <AIOrb state={orbState} size={24} />
+              <span style={{ fontFamily: "'DM Serif Display',serif", fontSize: 15, color: 'rgba(255,255,255,0.8)' }}>
                 {isJournalingMode ? 'Journaling' : 'Claramente'}
               </span>
             </div>
             <button onClick={handleMute} style={{ padding: 8, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-              {isMuted
-                ? <VolumeOff size={18} color="#EF4444" />
-                : <Volume    size={18} color={t.textSub} />}
+              {isMuted ? <VolumeOff size={16} color="rgba(239,68,68,0.8)" /> : <Volume size={16} color="rgba(255,255,255,0.4)" />}
             </button>
           </header>
 
           {/* Banner journaling */}
           {isJournalingMode && (
-            <div style={{ padding: '8px 20px', background: isDark ? 'rgba(167,139,250,0.06)' : '#F5F3FF', borderBottom: `0.5px solid rgba(139,92,246,0.18)`, display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: t.violet, zIndex: 10, position: 'relative' }}>
-              <Sparkle size={14} color={t.violet} />
-              <span style={{ fontWeight: 500 }}>Modo Journaling Guiado</span>
-              <span style={{ color: t.textMuted, fontSize: 11 }}>— sessão reflexiva estruturada</span>
+            <div style={{ padding: '8px 20px', background: 'rgba(167,139,250,0.05)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(167,139,250,0.1)', display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: 'rgba(196,181,253,0.8)', zIndex: 10, position: 'relative' }}>
+              <Sparkle size={12} color="rgba(196,181,253,0.7)" />
+              <span style={{ fontWeight: 500, letterSpacing: 0.3 }}>Modo Journaling Guiado</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 10 }}>— sessão reflexiva estruturada</span>
             </div>
           )}
 
           {/* Banner crise */}
           {isCrisis && (
-            <div style={{ margin: '10px 16px 0', padding: '12px 16px', borderRadius: 14, background: '#FFF7ED', border: '1px solid #FED7AA', fontSize: 13, color: '#92400E', lineHeight: 1.6, zIndex: 10, position: 'relative' }}>
+            <div style={{ margin: '10px 16px 0', padding: '11px 16px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '0.5px solid rgba(239,68,68,0.2)', backdropFilter: 'blur(12px)', fontSize: 13, color: 'rgba(252,165,165,0.9)', lineHeight: 1.6, zIndex: 10, position: 'relative' }}>
               CVV: <strong>188</strong> · Ligação gratuita, 24h · cvv.org.br
             </div>
           )}
 
           {/* Mensagens */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 8px', position: 'relative', zIndex: 1 }}>
-            <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '32px 20px 12px', position: 'relative', zIndex: 1 }}>
+            <div style={{ maxWidth: 660, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+              {/* Welcome screen — orb + typewriter */}
               {messages.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '44px 20px 20px', animation: 'fadeUp 0.6s ease' }}>
-                  <div style={{ display: 'inline-flex', marginBottom: 20 }}>
-                    <CrystalLogo size={52} spin />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px 28px', animation: 'fadeUp 0.8s ease' }}>
+
+                  {/* Orb central grande */}
+                  <div style={{ marginBottom: 44, animation: 'float 6s ease-in-out infinite' }}>
+                    <AIOrb state={orbState} size={110} />
                   </div>
-                  <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: t.text, marginBottom: 8, fontWeight: 400 }}>
-                    Olá, {firstName}
+
+                  {/* Saudação narrada */}
+                  <h2 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 28, color: 'rgba(255,255,255,0.85)', marginBottom: 10, fontWeight: 400, letterSpacing: -0.8, textAlign: 'center' }}>
+                    {bootDone && !welcomeDone
+                      ? <TypewriterText text={`Olá, ${firstName}`} speed={60} onComplete={() => setWelcomeDone(true)} />
+                      : `Olá, ${firstName}`}
                   </h2>
 
                   {loadingSmartSummary && (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                      <JarvisWaveform color={t.violet} />
+                    <div style={{ marginBottom: 20 }}>
+                      <JarvisWave color="rgba(124,58,237,0.5)" n={8} />
                     </div>
                   )}
 
                   {smartSummary && !loadingSmartSummary && (
-                    <div style={{ background: t.card, border: `0.5px solid ${t.cardBorder}`, borderRadius: 16, padding: '14px 18px', marginBottom: 20, maxWidth: 400, margin: '0 auto 20px', animation: 'fadeUp 0.4s ease', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.35), transparent)' }} />
-                      <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, margin: 0 }}>{smartSummary}</p>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '0.5px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '14px 20px', marginBottom: 24, maxWidth: 420, position: 'relative', overflow: 'hidden', animation: 'glowIn 0.6s ease' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.25),transparent)' }} />
+                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.75, margin: 0, fontStyle: 'italic' }}>
+                        {smartSummary}
+                      </p>
                     </div>
                   )}
 
-                  {!smartSummary && !loadingSmartSummary && (
-                    <p style={{ fontSize: 15, color: t.textSub, lineHeight: 1.7, maxWidth: 300, margin: '0 auto 22px' }}>
-                      Este é seu espaço sagrado. Como você está se sentindo hoje?
+                  {!smartSummary && !loadingSmartSummary && welcomeDone && (
+                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', lineHeight: 1.8, maxWidth: 320, textAlign: 'center', marginBottom: 8, animation: 'fadeUp 0.5s ease' }}>
+                      Este é seu espaço sagrado.<br/>Como você está se sentindo hoje?
                     </p>
                   )}
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                    {[
-                      { label: 'Journaling guiado', Icon: Sparkle, action: handleJournaling, hi: true },
-                      { label: 'Estou ansioso',    Icon: null,    action: () => sendMessage('Estou me sentindo ansioso ultimamente.'), hi: false },
-                      { label: 'Quero refletir',   Icon: null,    action: () => sendMessage('Quero fazer uma reflexão sobre minha vida.'), hi: false },
-                      { label: 'Me sinto bem',     Icon: null,    action: () => sendMessage('Estou me sentindo bem hoje!'), hi: false },
-                    ].map(chip => (
-                      <button key={chip.label} onClick={() => { audio.init(); chip.action() }} style={{
-                        padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                        cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
-                        border: chip.hi ? 'none' : `0.5px solid ${t.cardBorder}`,
-                        background: chip.hi ? t.violet : t.card,
-                        color: chip.hi ? 'white' : t.textSub,
-                        boxShadow: chip.hi ? '0 4px 14px rgba(139,92,246,0.35)' : 'none',
-                        display: 'flex', alignItems: 'center', gap: 7,
-                      }}>
-                        {chip.Icon && <chip.Icon size={13} color={chip.hi ? 'white' : t.textSub} />}
-                        {chip.label}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Chips */}
+                  {welcomeDone && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 20, animation: 'fadeUp 0.6s ease 0.2s both' }}>
+                      {[
+                        { label: 'Journaling guiado', Icon: Sparkle, action: handleJournaling, accent: true },
+                        { label: 'Estou ansioso',     Icon: null,    action: () => sendMessage('Estou me sentindo ansioso ultimamente.'), accent: false },
+                        { label: 'Quero refletir',    Icon: null,    action: () => sendMessage('Quero fazer uma reflexão sobre minha vida.'), accent: false },
+                        { label: 'Me sinto bem',      Icon: null,    action: () => sendMessage('Estou me sentindo bem hoje!'), accent: false },
+                      ].map(chip => (
+                        <button key={chip.label} onClick={() => { audio.init(); chip.action() }} style={{
+                          padding: '9px 18px', borderRadius: 22, fontSize: 13, fontWeight: 500,
+                          cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
+                          border: chip.accent ? 'none' : '0.5px solid rgba(255,255,255,0.08)',
+                          background: chip.accent ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.04)',
+                          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                          color: chip.accent ? 'rgba(196,181,253,0.95)' : 'rgba(255,255,255,0.45)',
+                          boxShadow: chip.accent ? '0 0 24px rgba(124,58,237,0.2), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
+                          display: 'flex', alignItems: 'center', gap: 7,
+                        }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.filter = 'brightness(1.15)' }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.filter = 'brightness(1)' }}>
+                          {chip.Icon && <chip.Icon size={12} color={chip.accent ? 'rgba(196,181,253,0.8)' : 'rgba(255,255,255,0.35)'} />}
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* Mensagens */}
               {messages.map(msg => (
-                <div key={msg.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row', animation: 'msgIn 0.3s ease' }}>
+                <div key={msg.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row', animation: 'msgIn 0.35s cubic-bezier(0.16,1,0.3,1)' }}>
                   {msg.role === 'assistant' && (
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: msg.isJournaling ? 'rgba(167,139,250,0.18)' : t.violetBg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {msg.isJournaling
-                        ? <Sparkle size={14} color="#A78BFA" />
-                        : <CrystalLogo size={18} spin />}
+                    <div style={{ flexShrink: 0 }}>
+                      <AIOrb state={isTyping ? 'thinking' : 'idle'} size={30} />
                     </div>
                   )}
                   <div style={{
-                    maxWidth: '74%', padding: '13px 17px', fontSize: 15, lineHeight: 1.72,
+                    maxWidth: '74%', padding: '13px 17px', fontSize: 14.5, lineHeight: 1.75,
                     whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                     borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                    background: msg.role === 'user' ? (msg.isJournaling ? '#5B21B6' : t.userBubble) : t.botBubble,
-                    color: msg.role === 'user' ? 'white' : t.text,
+                    background: msg.role === 'user'
+                      ? 'rgba(124,58,237,0.22)'
+                      : 'rgba(255,255,255,0.04)',
+                    backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                    color: msg.role === 'user' ? 'rgba(233,228,255,0.95)' : 'rgba(255,255,255,0.8)',
+                    border: msg.role === 'user'
+                      ? '0.5px solid rgba(124,58,237,0.35)'
+                      : '0.5px solid rgba(255,255,255,0.07)',
                     boxShadow: msg.role === 'user'
-                      ? '0 4px 16px rgba(139,92,246,0.28)'
-                      : `0 1px 8px rgba(0,0,0,${isDark ? '0.22' : '0.05'})`,
-                    border: msg.role === 'assistant' ? `0.5px solid ${msg.isJournaling ? 'rgba(167,139,250,0.25)' : t.botBorder}` : 'none',
+                      ? '0 4px 20px rgba(124,58,237,0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
+                      : '0 2px 16px rgba(0,0,0,0.2)',
                     position: 'relative', overflow: 'hidden',
                   }}>
-                    {msg.role === 'assistant' && (
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.28), transparent)' }} />
-                    )}
+                    {msg.role === 'assistant' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.2),transparent)' }} />}
                     {msg.content}
                   </div>
                 </div>
               ))}
 
+              {/* Typing indicator */}
               {isTyping && (
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', animation: 'fadeUp 0.3s ease' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: isJournalingMode ? 'rgba(167,139,250,0.18)' : t.violetBg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {isJournalingMode ? <Sparkle size={14} color="#A78BFA" /> : <CrystalLogo size={18} spin />}
-                  </div>
-                  <div style={{ background: t.botBubble, border: `0.5px solid ${t.botBorder}`, borderRadius: '20px 20px 20px 4px', padding: '10px 16px', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.28), transparent)' }} />
-                    <JarvisWaveform color={t.violet} />
+                  <AIOrb state="thinking" size={30} />
+                  <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: '20px 20px 20px 4px', padding: '12px 16px', position: 'relative', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.2)' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.2),transparent)' }} />
+                    <JarvisWave color="rgba(124,58,237,0.7)" n={9} />
                   </div>
                 </div>
               )}
@@ -629,39 +670,51 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Input */}
-          <div style={{ background: t.header, borderTop: `0.5px solid ${t.headerBorder}`, padding: '12px 16px 20px', flexShrink: 0, position: 'relative', zIndex: 10 }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.35) 50%, transparent 100%)' }} />
-            <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          {/* INPUT BAR — Apple Intelligence style */}
+          <div style={{ padding: '10px 16px 22px', flexShrink: 0, position: 'relative', zIndex: 10 }}>
+            {/* Linha de separação com glow */}
+            <div style={{ position: 'absolute', top: 0, left: '5%', right: '5%', height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.2),transparent)' }} />
+
+            {/* Banner journaling/muted */}
+            {(isJournalingMode || isMuted || isRecording) && (
+              <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 9, color: 'rgba(124,58,237,0.45)', letterSpacing: 1.2, fontFamily: 'monospace', textTransform: 'uppercase' }}>
+                  {isRecording ? '● GRAVANDO // TOQUE PARA PARAR' : isJournalingMode ? 'SESSÃO DE JOURNALING GUIADO' : 'SOM DESATIVADO'}
+                </span>
+              </div>
+            )}
+
+            <div style={{ maxWidth: 660, margin: '0 auto' }}>
               <div style={{
                 display: 'flex', gap: 8, alignItems: 'flex-end',
-                background: t.input, borderRadius: 24,
-                padding: '6px 6px 6px 6px',
-                border: `1.5px solid ${isRecording ? 'rgba(239,68,68,0.4)' : isJournalingMode ? 'rgba(167,139,250,0.35)' : t.inputBorder}`,
-                transition: 'border-color 0.2s',
+                background: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+                borderRadius: 26, padding: '7px 7px 7px 7px',
+                border: `0.5px solid ${isRecording ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+                transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)',
               }}
-                onFocusCapture={e => (e.currentTarget.style.borderColor = isRecording ? 'rgba(239,68,68,0.6)' : t.violet)}
-                onBlurCapture={e => (e.currentTarget.style.borderColor = isRecording ? 'rgba(239,68,68,0.4)' : isJournalingMode ? 'rgba(167,139,250,0.35)' : t.inputBorder)}>
+                onFocusCapture={e => { e.currentTarget.style.border = '0.5px solid rgba(124,58,237,0.4)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,0,0,0.3), 0 0 0 3px rgba(124,58,237,0.06), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+                onBlurCapture={e => { e.currentTarget.style.border = `0.5px solid ${isRecording ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
 
-                {/* Botão microfone */}
+                {/* Mic */}
                 <button onClick={handleMicToggle} title={isRecording ? 'Parar gravação' : 'Gravar áudio'} style={{
-                  width: 40, height: 40, borderRadius: 18, border: 'none', flexShrink: 0,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: isRecording ? 'rgba(239,68,68,0.15)' : t.violetBg,
-                  transition: 'all 0.2s',
-                  animation: isRecording ? 'recPulse 1.5s infinite' : 'none',
-                }}>
-                  {isRecording
-                    ? <Stop size={14} color="#EF4444" />
-                    : <Mic  size={16} color={t.violet} />}
+                  width: 42, height: 42, borderRadius: 19, border: 'none', flexShrink: 0, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
+                  background: isRecording ? 'rgba(239,68,68,0.12)' : 'rgba(124,58,237,0.1)',
+                  animation: isRecording ? 'recPulse 1.6s infinite' : 'none',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.background = isRecording ? 'rgba(239,68,68,0.2)' : 'rgba(124,58,237,0.18)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = isRecording ? 'rgba(239,68,68,0.12)' : 'rgba(124,58,237,0.1)' }}>
+                  {isRecording ? <Stop size={13} color="rgba(239,68,68,0.9)" /> : <Mic size={16} color="rgba(124,58,237,0.8)" />}
                 </button>
 
-                {/* Área de texto */}
+                {/* Text area */}
                 <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
                   {isRecording && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 4px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 4px 0' }}>
                       <RecordWave />
-                      <span style={{ fontSize: 13, color: '#EF4444', fontFamily: "'DM Sans', sans-serif" }}>
+                      <span style={{ fontSize: 13, color: 'rgba(239,68,68,0.8)', fontFamily: "'DM Sans',sans-serif" }}>
                         {recordingText || 'Ouvindo...'}
                       </span>
                     </div>
@@ -671,33 +724,32 @@ export default function Home() {
                       ref={textareaRef} value={input}
                       onChange={e => { setInput(e.target.value); autoResize() }}
                       onKeyDown={handleKey}
-                      placeholder={isJournalingMode ? 'Escreva sua reflexão...' : 'Compartilhe seus pensamentos...'}
+                      placeholder={isJournalingMode ? 'Escreva sua reflexão...' : 'Como você está se sentindo?'}
                       rows={1}
-                      style={{ width: '100%', background: 'none', border: 'none', outline: 'none', fontSize: 15, lineHeight: 1.6, resize: 'none', fontFamily: "'DM Sans', sans-serif", color: t.text, maxHeight: 120, padding: '10px 4px', display: 'block' }}
+                      style={{ width: '100%', background: 'none', border: 'none', outline: 'none', fontSize: 14.5, lineHeight: 1.6, resize: 'none', fontFamily: "'DM Sans',sans-serif", color: 'rgba(255,255,255,0.8)', maxHeight: 120, padding: '10px 4px', display: 'block' }}
                     />
                   )}
                 </div>
 
-                {/* Botão enviar */}
+                {/* Send */}
                 <button onClick={handleSend} disabled={isTyping || (!input.trim() && !recordingText.trim())} style={{
-                  width: 40, height: 40, borderRadius: 18, border: 'none', flexShrink: 0,
+                  width: 42, height: 42, borderRadius: 19, border: 'none', flexShrink: 0,
                   cursor: isTyping || (!input.trim() && !recordingText.trim()) ? 'not-allowed' : 'pointer',
-                  background: isTyping || (!input.trim() && !recordingText.trim()) ? t.violetBg : t.violet,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
-                  boxShadow: isTyping || (!input.trim() && !recordingText.trim()) ? 'none' : '0 4px 14px rgba(139,92,246,0.45)',
-                }}>
-                  <Send size={17} color="white" />
+                  background: isTyping || (!input.trim() && !recordingText.trim())
+                    ? 'rgba(124,58,237,0.08)'
+                    : 'rgba(124,58,237,0.75)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
+                  boxShadow: isTyping || (!input.trim() && !recordingText.trim()) ? 'none' : '0 4px 16px rgba(124,58,237,0.35)',
+                }}
+                  onMouseEnter={e => { if (!isTyping && input.trim()) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.background = 'rgba(124,58,237,0.9)' } }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = isTyping || (!input.trim() && !recordingText.trim()) ? 'rgba(124,58,237,0.08)' : 'rgba(124,58,237,0.75)' }}>
+                  <Send size={16} color={isTyping || (!input.trim() && !recordingText.trim()) ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.9)'} />
                 </button>
               </div>
 
-              <p style={{ textAlign: 'center', fontSize: 10, color: t.textMuted, marginTop: 7, letterSpacing: 0.3, fontFamily: 'monospace' }}>
-                {isRecording
-                  ? 'GRAVANDO // TOQUE NO MICROFONE PARA PARAR'
-                  : isJournalingMode
-                  ? 'SESSÃO DE JOURNALING GUIADO ATIVA'
-                  : isMuted
-                  ? 'SOM DESATIVADO // TOQUE NO ÍCONE PARA ATIVAR'
-                  : 'CLARAMENTE // PROTOCOLO INTROSPECTIVO // CVV 188'}
+              <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.12)', marginTop: 8, letterSpacing: 0.5, fontFamily: 'monospace' }}>
+                claramente // protocolo introspectivo ativo // cvv 188
               </p>
             </div>
           </div>
