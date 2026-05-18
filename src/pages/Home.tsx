@@ -15,7 +15,6 @@ import {
 } from '@/components/Icons'
 import type { ConversationItem } from '@/hooks/useChat'
 
-// ─── Neural Background ──────────────────────────────────────────
 function NeuralBackground({ isDark }: { isDark: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
@@ -64,7 +63,6 @@ function NeuralBackground({ isDark }: { isDark: boolean }) {
   return <canvas ref={ref} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: isDark ? 0.7 : 0.5 }} />
 }
 
-// ─── AI Orb ─────────────────────────────────────────────────────
 type OrbState = 'idle' | 'listening' | 'thinking' | 'speaking'
 function AIOrb({ state = 'idle', size = 96, color = '#7C3AED' }: { state?: OrbState; size?: number; color?: string }) {
   const glow = state === 'listening' ? 'rgba(129,140,248,0.22)' : state === 'thinking' ? 'rgba(91,33,182,0.26)' : `${color}22`
@@ -89,7 +87,6 @@ function AIOrb({ state = 'idle', size = 96, color = '#7C3AED' }: { state?: OrbSt
   )
 }
 
-// ─── Typewriter ──────────────────────────────────────────────────
 function TypewriterText({ text, speed = 28, onComplete }: { text: string; speed?: number; onComplete?: () => void }) {
   const [shown, setShown] = useState('')
   const [done, setDone]   = useState(false)
@@ -104,7 +101,6 @@ function TypewriterText({ text, speed = 28, onComplete }: { text: string; speed?
   return <span>{shown}{!done && <span style={{ opacity: 0.5, animation: 'blink 0.9s infinite' }}>|</span>}</span>
 }
 
-// ─── Waveforms ───────────────────────────────────────────────────
 function JarvisWave({ color = 'rgba(124,58,237,0.8)', n = 10 }: { color?: string; n?: number }) {
   const H = [0.35,0.75,0.55,1,0.65,0.9,0.45,0.8,0.5,0.85,0.4,0.6]
   return (
@@ -126,7 +122,6 @@ function RecordWave() {
   )
 }
 
-// ─── Boot ────────────────────────────────────────────────────────
 function BootSequence({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState(0)
   const [prog,  setProg]  = useState(0)
@@ -146,13 +141,13 @@ function BootSequence({ onComplete }: { onComplete: () => void }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#030208', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: phase === 3 ? 0 : 1, transition: 'opacity 0.7s ease', fontFamily: 'monospace' }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(124,58,237,0.15) 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(124,58,237,0.6),transparent)', animation: 'scanLine 2s ease-in-out infinite', pointerEvents: 'none' }} />
-      <div style={{ marginBottom: 36, opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'scale(1)' : 'scale(0.4)', transition: 'all 0.7s cubic-bezier(0.34,1.56,0.64,1)' }}>
-        <AIOrb state="idle" size={80} />
+      <div style={{ marginBottom: 32, opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'scale(1)' : 'scale(0.4)', transition: 'all 0.7s cubic-bezier(0.34,1.56,0.64,1)' }}>
+        <AIOrb state="idle" size={76} />
       </div>
       <h1 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 'clamp(22px,5vw,34px)', color: 'rgba(255,255,255,0.92)', letterSpacing: 10, textTransform: 'uppercase', marginBottom: 6, opacity: phase >= 1 ? 1 : 0, transition: 'opacity 0.6s 0.3s', textShadow: '0 0 40px rgba(124,58,237,0.7)' }}>
         Claramente
       </h1>
-      <p style={{ fontSize: 9, color: 'rgba(124,58,237,0.6)', letterSpacing: 4, marginBottom: 36, opacity: phase >= 1 ? 0.9 : 0, transition: 'opacity 0.6s 0.5s', textTransform: 'uppercase' }}>
+      <p style={{ fontSize: 9, color: 'rgba(124,58,237,0.6)', letterSpacing: 4, marginBottom: 32, opacity: phase >= 1 ? 0.9 : 0, transition: 'opacity 0.6s 0.5s', textTransform: 'uppercase' }}>
         ia terapêutica avançada
       </p>
       <div style={{ width: 290, maxWidth: '88vw', marginBottom: 20 }}>
@@ -197,7 +192,6 @@ function groupConversations(convs: ConversationItem[]) {
   return g.filter(x => x.items.length > 0)
 }
 
-// ─── HOME ────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
   const { profile, signOut }  = useAuth()
@@ -245,14 +239,12 @@ export default function Home() {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
   useEffect(() => emotionEngine.subscribe(setEmotionalProfile), [])
 
-  // Trecho 1 — Boas-vindas
   useEffect(() => {
     if (!bootDone) return
     const timer = setTimeout(() => speechEngine.speakWelcome(firstName), 800)
     return () => clearTimeout(timer)
   }, [bootDone, firstName])
 
-  // Trecho 2 — Falar respostas da IA
   useEffect(() => {
     if (messages.length > prevMsgLen.current) {
       const newMsgs = messages.slice(prevMsgLen.current)
@@ -308,7 +300,6 @@ export default function Home() {
     const text = input.trim(); setInput(''); setRecordingText('')
     if (isRecording) { speechEngine.stopRecording(); setIsRecording(false) }
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    // Trecho 3
     audio.init(); audio.playMessageSent()
     speechEngine.speakAck(firstName)
     await sendMessage(text)
@@ -328,7 +319,6 @@ export default function Home() {
     resetChat(); setSidebarOpen(false)
   }
 
-  // Trecho 4
   async function handleJournaling() {
     audio.init(); audio.playJournaling()
     speechEngine.speakJournalingStart()
@@ -360,7 +350,7 @@ export default function Home() {
     @keyframes pulse     { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.12)} }
     @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
     @keyframes recPulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.35)} 50%{box-shadow:0 0 0 9px rgba(239,68,68,0)} }
-    @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
     .sb-desktop { display: none !important; height: 100%; }
     .mob-hdr    { display: flex; }
     @media (min-width: 768px) {
@@ -374,17 +364,10 @@ export default function Home() {
     input::placeholder    { color: ${t.placeholder} !important; }
   `
 
-  // ─── SIDEBAR ──────────────────────────────────────────────────
+  // ─── SIDEBAR ────────────────────────────────────────────────
   function Sidebar() {
     return (
-      <aside style={{
-        width: 260, flexShrink: 0, height: '100%',
-        display: 'flex', flexDirection: 'column',
-        background: t.sidebar,
-        backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
-        borderRight: `0.5px solid ${t.sidebarBorder}`,
-        position: 'relative',
-      }}>
+      <aside style={{ width: 260, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', background: t.sidebar, backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)', borderRight: `0.5px solid ${t.sidebarBorder}`, position: 'relative' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: `radial-gradient(${isDark ? 'rgba(124,58,237,0.09)' : 'rgba(124,58,237,0.05)'} 1px, transparent 1px)`, backgroundSize: '22px 22px', pointerEvents: 'none', opacity: 0.7 }} />
 
         {/* Logo */}
@@ -408,31 +391,12 @@ export default function Home() {
 
         {/* Ações */}
         <div style={{ padding: '10px 10px 6px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative' }}>
-          <button onClick={handleNewChat} style={{
-            width: '100%', height: 40, padding: '0 14px',
-            background: t.violetBg, border: `0.5px solid ${isDark ? 'rgba(124,58,237,0.2)' : 'rgba(124,58,237,0.18)'}`,
-            borderRadius: 10, color: t.violet, fontSize: 12, fontWeight: 500,
-            display: 'flex', alignItems: 'center', gap: 8,
-            cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-            transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
-            WebkitTapHighlightColor: 'transparent',
-          }}
+          <button onClick={handleNewChat} style={{ width: '100%', height: 40, padding: '0 14px', background: t.violetBg, border: `0.5px solid ${isDark ? 'rgba(124,58,237,0.2)' : 'rgba(124,58,237,0.18)'}`, borderRadius: 10, color: t.violet, fontSize: 12, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)', WebkitTapHighlightColor: 'transparent' }}
             onMouseEnter={e => { e.currentTarget.style.background = t.violetHover; e.currentTarget.style.transform = 'translateX(2px)' }}
             onMouseLeave={e => { e.currentTarget.style.background = t.violetBg; e.currentTarget.style.transform = 'translateX(0)' }}>
             <Plus size={13} color={t.violet} /> Nova conversa
           </button>
-
-          <button onClick={handleJournaling} style={{
-            width: '100%', height: 40, padding: '0 14px',
-            background: isDark ? 'rgba(167,139,250,0.07)' : 'rgba(124,58,237,0.06)',
-            border: `0.5px solid ${isDark ? 'rgba(167,139,250,0.14)' : 'rgba(124,58,237,0.13)'}`,
-            borderRadius: 10, color: isDark ? 'rgba(196,181,253,0.88)' : t.violetDeep,
-            fontSize: 12, fontWeight: 500,
-            display: 'flex', alignItems: 'center', gap: 8,
-            cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-            transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
-            WebkitTapHighlightColor: 'transparent',
-          }}
+          <button onClick={handleJournaling} style={{ width: '100%', height: 40, padding: '0 14px', background: isDark ? 'rgba(167,139,250,0.07)' : 'rgba(124,58,237,0.06)', border: `0.5px solid ${isDark ? 'rgba(167,139,250,0.14)' : 'rgba(124,58,237,0.13)'}`, borderRadius: 10, color: isDark ? 'rgba(196,181,253,0.88)' : t.violetDeep, fontSize: 12, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)', WebkitTapHighlightColor: 'transparent' }}
             onMouseEnter={e => { e.currentTarget.style.background = isDark ? 'rgba(167,139,250,0.15)' : 'rgba(124,58,237,0.12)'; e.currentTarget.style.transform = 'translateX(2px)' }}
             onMouseLeave={e => { e.currentTarget.style.background = isDark ? 'rgba(167,139,250,0.07)' : 'rgba(124,58,237,0.06)'; e.currentTarget.style.transform = 'translateX(0)' }}>
             <Sparkle size={12} color={isDark ? 'rgba(196,181,253,0.75)' : t.violetDeep} /> Journaling guiado
@@ -452,14 +416,7 @@ export default function Home() {
                 {group.label}
               </p>
               {group.items.map(conv => (
-                <button key={conv.id} onClick={() => handleLoadConv(conv.id)} style={{
-                  width: '100%', textAlign: 'left', padding: '8px 10px',
-                  borderRadius: 8, border: 'none', cursor: 'pointer', marginBottom: 1,
-                  background: conversationId === conv.id ? t.violetBg : 'transparent',
-                  borderLeft: `2px solid ${conversationId === conv.id ? t.violet : 'transparent'}`,
-                  transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)', display: 'block',
-                  minHeight: 44, WebkitTapHighlightColor: 'transparent',
-                }}
+                <button key={conv.id} onClick={() => handleLoadConv(conv.id)} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', marginBottom: 1, background: conversationId === conv.id ? t.violetBg : 'transparent', borderLeft: `2px solid ${conversationId === conv.id ? t.violet : 'transparent'}`, transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)', display: 'block', minHeight: 44, WebkitTapHighlightColor: 'transparent' }}
                   onMouseEnter={e => { if (conversationId !== conv.id) e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(124,58,237,0.05)' }}
                   onMouseLeave={e => { if (conversationId !== conv.id) e.currentTarget.style.background = 'transparent' }}>
                   <p style={{ fontSize: 12, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'DM Sans',sans-serif", fontWeight: conversationId === conv.id ? 500 : 400, color: conversationId === conv.id ? t.sidebarText : t.textSub }}>
@@ -474,15 +431,9 @@ export default function Home() {
           ))}
         </div>
 
-        {/* HUD diagnóstico */}
+        {/* HUD */}
         <div style={{ padding: '6px 10px', borderTop: `0.5px solid ${t.sidebarBorder}` }}>
-          <button onClick={() => setShowHUD(p => !p)} style={{
-            width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '7px 8px', borderRadius: 7, border: 'none',
-            background: 'transparent', cursor: 'pointer',
-            color: t.sidebarMuted, fontSize: 10, fontFamily: "'DM Sans',sans-serif", fontWeight: 500,
-            letterSpacing: 0.5, textTransform: 'uppercase', WebkitTapHighlightColor: 'transparent',
-          }}>
+          <button onClick={() => setShowHUD(p => !p)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 8px', borderRadius: 7, border: 'none', background: 'transparent', cursor: 'pointer', color: t.sidebarMuted, fontSize: 10, fontFamily: "'DM Sans',sans-serif", fontWeight: 500, letterSpacing: 0.5, textTransform: 'uppercase', WebkitTapHighlightColor: 'transparent' }}>
             <span>Diagnóstico emocional</span>
             <span style={{ fontSize: 9 }}>{showHUD ? '▲' : '▼'}</span>
           </button>
@@ -514,12 +465,7 @@ export default function Home() {
               { Icon: Person,                         action: () => navigate('/perfil'),    title: 'Perfil' },
               { Icon: LogOut,                         action: signOut,                      title: 'Sair'  },
             ].map(({ Icon, action, title }) => (
-              <button key={title} onClick={action} title={title} style={{
-                width: 28, height: 28, borderRadius: 7, border: 'none',
-                background: 'transparent', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.18s', WebkitTapHighlightColor: 'transparent',
-              }}
+              <button key={title} onClick={action} title={title} style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.18s', WebkitTapHighlightColor: 'transparent' }}
                 onMouseEnter={e => (e.currentTarget.style.background = t.violetBg)}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                 <Icon size={14} color={title === 'Som' && isMuted ? '#EF4444' : t.sidebarMuted} />
@@ -531,11 +477,11 @@ export default function Home() {
     )
   }
 
-  // ─── RENDER ───────────────────────────────────────────────────
+  // ─── RENDER ─────────────────────────────────────────────────
   return (
     <>
       <NeuralBackground isDark={isDark} />
-      <div style={{ position: 'fixed', top: '15%', left: '40%', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${moodGlow(mood)} 0%, transparent 65%)`, pointerEvents: 'none', zIndex: 0, animation: 'orbBreath 9s ease-in-out infinite', transition: 'background 3s ease' }} />
+      <div style={{ position: 'fixed', top: '15%', left: '40%', width: 500, height: 500, borderRadius: '50%', background: `radial-gradient(circle, ${moodGlow(mood)} 0%, transparent 65%)`, pointerEvents: 'none', zIndex: 0, animation: 'orbBreath 9s ease-in-out infinite', transition: 'background 3s ease' }} />
 
       {!bootDone && <BootSequence onComplete={handleBootComplete} />}
 
@@ -553,7 +499,6 @@ export default function Home() {
           </>
         )}
 
-        {/* Área principal */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
 
           {isTyping && <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: `linear-gradient(90deg,transparent,${t.scanLine},transparent)`, animation: 'scanLine 1.8s ease-in-out infinite', zIndex: 5, pointerEvents: 'none' }} />}
@@ -574,7 +519,6 @@ export default function Home() {
             </button>
           </header>
 
-          {/* Banner journaling */}
           {isJournalingMode && (
             <div style={{ padding: '8px 18px', background: isDark ? 'rgba(167,139,250,0.07)' : 'rgba(124,58,237,0.06)', backdropFilter: 'blur(12px)', borderBottom: `0.5px solid ${isDark ? 'rgba(167,139,250,0.12)' : 'rgba(124,58,237,0.1)'}`, display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, color: t.violet, zIndex: 10, position: 'relative' }}>
               <Sparkle size={13} color={t.violet} />
@@ -583,7 +527,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Banner crise */}
           {isCrisis && (
             <div style={{ margin: '8px 14px 0', padding: '10px 14px', borderRadius: 12, background: isDark ? 'rgba(239,68,68,0.08)' : '#FFF7ED', border: `1px solid ${isDark ? 'rgba(239,68,68,0.2)' : '#FED7AA'}`, fontSize: 13, color: isDark ? 'rgba(252,165,165,0.9)' : '#92400E', lineHeight: 1.6, zIndex: 10, position: 'relative' }}>
               CVV: <strong>188</strong> · Ligação gratuita, 24h · cvv.org.br
@@ -591,63 +534,92 @@ export default function Home() {
           )}
 
           {/* Mensagens */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 18px 10px', position: 'relative', zIndex: 1 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 18px 10px', position: 'relative', zIndex: 1 }}>
             <div style={{ maxWidth: 660, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              {/* Welcome */}
+              {/* ── WELCOME SCREEN ── */}
               {messages.length === 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 24px', animation: 'fadeUp 0.7s ease' }}>
-                  <div style={{ marginBottom: 36, animation: 'float 7s ease-in-out infinite' }}>
-                    <AIOrb state={orbState} size={104} color={moodCol} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px 16px', animation: 'fadeUp 0.7s ease' }}>
+
+                  {/* Orb maior — 136px */}
+                  <div style={{ marginBottom: 24, animation: 'float 7s ease-in-out infinite' }}>
+                    <AIOrb state={orbState} size={136} color={moodCol} />
                   </div>
 
-                  <h2 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 'clamp(20px,4vw,26px)', color: t.text, marginBottom: 8, fontWeight: 400, letterSpacing: -0.6, textAlign: 'center' }}>
+                  {/* Saudação */}
+                  <h2 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 'clamp(20px,4vw,26px)', color: t.text, marginBottom: 6, fontWeight: 400, letterSpacing: -0.6, textAlign: 'center' }}>
                     {bootDone && !welcomeDone
                       ? <TypewriterText text={`Olá, ${firstName}`} speed={55} onComplete={() => setWelcomeDone(true)} />
                       : `Olá, ${firstName}`}
                   </h2>
 
                   {loadingSmartSummary && (
-                    <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
                       <JarvisWave color={`${moodCol}80`} n={8} />
                     </div>
                   )}
 
                   {smartSummary && !loadingSmartSummary && (
-                    <div style={{ background: t.card, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `0.5px solid ${t.cardBorder}`, borderRadius: 18, padding: '13px 18px', marginBottom: 20, maxWidth: 420, width: '100%', position: 'relative', overflow: 'hidden', animation: 'fadeUp 0.5s ease', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 20px rgba(124,58,237,0.07)' }}>
+                    <div style={{ background: t.card, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `0.5px solid ${t.cardBorder}`, borderRadius: 16, padding: '12px 16px', marginBottom: 16, width: '100%', maxWidth: 400, position: 'relative', overflow: 'hidden', animation: 'fadeUp 0.5s ease', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 20px rgba(124,58,237,0.07)' }}>
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg,transparent,${moodCol}30,transparent)` }} />
-                      <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.75, margin: 0, fontStyle: 'italic' }}>{smartSummary}</p>
+                      <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.72, margin: 0, fontStyle: 'italic' }}>{smartSummary}</p>
                     </div>
                   )}
 
                   {!smartSummary && !loadingSmartSummary && welcomeDone && (
-                    <p style={{ fontSize: 14, color: t.textSub, lineHeight: 1.8, maxWidth: 300, textAlign: 'center', marginBottom: 6, animation: 'fadeUp 0.5s ease' }}>
+                    <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.75, maxWidth: 280, textAlign: 'center', marginBottom: 4, animation: 'fadeUp 0.5s ease' }}>
                       Este é seu espaço sagrado.<br/>Como você está se sentindo hoje?
                     </p>
                   )}
 
+                  {/* ── Botões em grid 2×2 ── */}
                   {welcomeDone && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 20, animation: 'fadeUp 0.6s ease 0.15s both', maxWidth: 460 }}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 8,
+                      marginTop: 16,
+                      width: '100%',
+                      maxWidth: 380,
+                      animation: 'fadeUp 0.6s ease 0.15s both',
+                    }}>
                       {[
                         { label: 'Journaling guiado', Icon: Sparkle, action: handleJournaling, accent: true },
                         { label: 'Estou ansioso',     Icon: null,    action: () => sendMessage('Estou me sentindo ansioso ultimamente.'), accent: false },
                         { label: 'Quero refletir',    Icon: null,    action: () => sendMessage('Quero fazer uma reflexão sobre minha vida.'), accent: false },
                         { label: 'Me sinto bem',      Icon: null,    action: () => sendMessage('Estou me sentindo bem hoje!'), accent: false },
                       ].map(chip => (
-                        <button key={chip.label} onClick={() => { audio.init(); chip.action() }} style={{
-                          padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                          cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-                          transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
-                          border: chip.accent ? 'none' : `0.5px solid ${t.cardBorder}`,
-                          background: chip.accent ? (isDark ? `${moodCol}28` : t.violetBg) : t.card,
-                          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-                          color: chip.accent ? t.violet : t.textSub,
-                          boxShadow: chip.accent ? `0 0 20px ${moodCol}1A` : 'none',
-                          display: 'flex', alignItems: 'center', gap: 7, minHeight: 40,
-                          WebkitTapHighlightColor: 'transparent',
-                        }}
+                        <button
+                          key={chip.label}
+                          onClick={() => { audio.init(); chip.action() }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: 14,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            fontFamily: "'DM Sans',sans-serif",
+                            transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
+                            border: chip.accent ? 'none' : `0.5px solid ${t.cardBorder}`,
+                            background: chip.accent
+                              ? (isDark ? `${moodCol}28` : t.violetBg)
+                              : t.card,
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            color: chip.accent ? t.violet : t.textSub,
+                            boxShadow: chip.accent ? `0 0 20px ${moodCol}1A` : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            minHeight: 44,
+                            textAlign: 'center' as const,
+                            lineHeight: 1.3,
+                            WebkitTapHighlightColor: 'transparent',
+                          }}
                           onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.filter = 'brightness(1.12)' }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.filter = 'brightness(1)' }}>
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.filter = 'brightness(1)' }}
+                        >
                           {chip.Icon && <chip.Icon size={13} color={chip.accent ? t.violet : t.textSub} />}
                           {chip.label}
                         </button>
@@ -676,28 +648,13 @@ export default function Home() {
                       <AIOrb state={isTyping ? 'thinking' : 'idle'} size={30} color={moodCol} />
                     </div>
                   )}
-                  <div style={{
-                    maxWidth: 'min(74%, 500px)', padding: '12px 16px',
-                    fontSize: 14.5, lineHeight: 1.72, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                    background: msg.role === 'user' ? t.userBubble : t.botBubble,
-                    backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-                    color: msg.role === 'user' ? (isDark ? t.userText : t.text) : t.text,
-                    border: msg.role === 'user' ? `0.5px solid ${t.userBorder}` : `0.5px solid ${t.botBorder}`,
-                    boxShadow: msg.role === 'user'
-                      ? `0 3px 16px ${moodCol}16`
-                      : isDark ? '0 2px 14px rgba(0,0,0,0.22)' : '0 2px 14px rgba(124,58,237,0.06)',
-                    position: 'relative', overflow: 'hidden',
-                  }}>
-                    {msg.role === 'assistant' && (
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg,transparent,${moodCol}20,transparent)` }} />
-                    )}
+                  <div style={{ maxWidth: 'min(74%, 500px)', padding: '12px 16px', fontSize: 14.5, lineHeight: 1.72, whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: msg.role === 'user' ? t.userBubble : t.botBubble, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', color: msg.role === 'user' ? (isDark ? t.userText : t.text) : t.text, border: msg.role === 'user' ? `0.5px solid ${t.userBorder}` : `0.5px solid ${t.botBorder}`, boxShadow: msg.role === 'user' ? `0 3px 16px ${moodCol}16` : isDark ? '0 2px 14px rgba(0,0,0,0.22)' : '0 2px 14px rgba(124,58,237,0.06)', position: 'relative', overflow: 'hidden' }}>
+                    {msg.role === 'assistant' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg,transparent,${moodCol}20,transparent)` }} />}
                     {msg.content}
                   </div>
                 </div>
               ))}
 
-              {/* Typing */}
               {isTyping && (
                 <div style={{ display: 'flex', gap: 9, alignItems: 'flex-end', animation: 'fadeUp 0.3s ease' }}>
                   <AIOrb state="thinking" size={30} color={moodCol} />
@@ -713,14 +670,7 @@ export default function Home() {
           </div>
 
           {/* INPUT BAR */}
-          <div style={{
-            background: t.header,
-            backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
-            borderTop: `0.5px solid ${t.headerBorder}`,
-            padding: '10px 14px',
-            paddingBottom: `max(10px, env(safe-area-inset-bottom, 10px))`,
-            flexShrink: 0, position: 'relative', zIndex: 10,
-          }}>
+          <div style={{ background: t.header, backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', borderTop: `0.5px solid ${t.headerBorder}`, padding: '10px 14px', paddingBottom: `max(10px, env(safe-area-inset-bottom, 10px))`, flexShrink: 0, position: 'relative', zIndex: 10 }}>
             <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '1px', background: `linear-gradient(90deg,transparent,${moodCol}22,transparent)`, transition: 'background 2s ease' }} />
 
             {(isRecording || isMuted) && (
@@ -730,37 +680,18 @@ export default function Home() {
             )}
 
             <div style={{ maxWidth: 660, margin: '0 auto' }}>
-              <div style={{
-                display: 'flex', gap: 7, alignItems: 'flex-end',
-                background: t.input,
-                backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-                borderRadius: 24, padding: '6px',
-                border: `1.5px solid ${isRecording ? 'rgba(239,68,68,0.4)' : t.inputBorder}`,
-                boxShadow: isDark
-                  ? '0 6px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)'
-                  : '0 4px 20px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-              }}
+              <div style={{ display: 'flex', gap: 7, alignItems: 'flex-end', background: t.input, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: 24, padding: '6px', border: `1.5px solid ${isRecording ? 'rgba(239,68,68,0.4)' : t.inputBorder}`, boxShadow: isDark ? '0 6px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)' : '0 4px 20px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.8)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
                 onFocusCapture={e => { e.currentTarget.style.borderColor = t.inputFocus; e.currentTarget.style.boxShadow = isDark ? `0 6px 32px rgba(0,0,0,0.28), 0 0 0 3px ${moodCol}0E` : `0 4px 20px rgba(124,58,237,0.14), 0 0 0 3px ${moodCol}10` }}
                 onBlurCapture={e => { e.currentTarget.style.borderColor = isRecording ? 'rgba(239,68,68,0.4)' : t.inputBorder; e.currentTarget.style.boxShadow = isDark ? '0 6px 28px rgba(0,0,0,0.22)' : '0 4px 20px rgba(124,58,237,0.08)' }}>
 
-                {/* Microfone */}
                 {micSupported && (
-                  <button onClick={handleMicToggle} title={isRecording ? 'Parar gravação' : 'Gravar áudio'} style={{
-                    width: 42, height: 42, borderRadius: 18, border: 'none', flexShrink: 0,
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isRecording ? 'rgba(239,68,68,0.12)' : t.violetBg,
-                    transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
-                    animation: isRecording ? 'recPulse 1.6s infinite' : 'none',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
+                  <button onClick={handleMicToggle} title={isRecording ? 'Parar gravação' : 'Gravar áudio'} style={{ width: 42, height: 42, borderRadius: 18, border: 'none', flexShrink: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isRecording ? 'rgba(239,68,68,0.12)' : t.violetBg, transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)', animation: isRecording ? 'recPulse 1.6s infinite' : 'none', WebkitTapHighlightColor: 'transparent' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}>
                     {isRecording ? <Stop size={13} color="#EF4444" /> : <Mic size={16} color={t.violet} />}
                   </button>
                 )}
 
-                {/* Texto */}
                 <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
                   {isRecording && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 4px 0' }}>
@@ -777,27 +708,12 @@ export default function Home() {
                       onKeyDown={handleKey}
                       placeholder={isJournalingMode ? 'Escreva sua reflexão...' : 'Como você está se sentindo?'}
                       rows={1}
-                      style={{
-                        width: '100%', background: 'none', border: 'none', outline: 'none',
-                        fontSize: 15, lineHeight: 1.6, resize: 'none',
-                        fontFamily: "'DM Sans',sans-serif",
-                        color: t.text, maxHeight: 120, padding: '9px 4px',
-                        display: 'block', WebkitAppearance: 'none',
-                      }}
+                      style={{ width: '100%', background: 'none', border: 'none', outline: 'none', fontSize: 15, lineHeight: 1.6, resize: 'none', fontFamily: "'DM Sans',sans-serif", color: t.text, maxHeight: 120, padding: '9px 4px', display: 'block', WebkitAppearance: 'none' }}
                     />
                   )}
                 </div>
 
-                {/* Enviar */}
-                <button onClick={handleSend} disabled={isTyping || (!input.trim() && !recordingText.trim())} style={{
-                  width: 42, height: 42, borderRadius: 18, border: 'none', flexShrink: 0,
-                  cursor: isTyping || (!input.trim() && !recordingText.trim()) ? 'not-allowed' : 'pointer',
-                  background: isTyping || (!input.trim() && !recordingText.trim()) ? t.violetBg : t.violetDeep,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
-                  boxShadow: isTyping || (!input.trim() && !recordingText.trim()) ? 'none' : `0 4px 14px ${moodCol}38`,
-                  WebkitTapHighlightColor: 'transparent',
-                }}
+                <button onClick={handleSend} disabled={isTyping || (!input.trim() && !recordingText.trim())} style={{ width: 42, height: 42, borderRadius: 18, border: 'none', flexShrink: 0, cursor: isTyping || (!input.trim() && !recordingText.trim()) ? 'not-allowed' : 'pointer', background: isTyping || (!input.trim() && !recordingText.trim()) ? t.violetBg : t.violetDeep, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)', boxShadow: isTyping || (!input.trim() && !recordingText.trim()) ? 'none' : `0 4px 14px ${moodCol}38`, WebkitTapHighlightColor: 'transparent' }}
                   onMouseEnter={e => { if (!isTyping && input.trim()) e.currentTarget.style.transform = 'scale(1.08)' }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}>
                   <Send size={16} color={isTyping || (!input.trim() && !recordingText.trim()) ? t.violet : 'white'} />
@@ -805,11 +721,7 @@ export default function Home() {
               </div>
 
               <p style={{ textAlign: 'center', fontSize: 10, color: t.textMuted, marginTop: 6, letterSpacing: 0.3, fontFamily: "'DM Sans',sans-serif" }}>
-                {isJournalingMode
-                  ? 'Sessão de journaling guiado ativa'
-                  : !micSupported
-                  ? 'Gravação de voz não suportada neste navegador'
-                  : 'Não substitui acompanhamento psicológico · CVV: 188'}
+                {isJournalingMode ? 'Sessão de journaling guiado ativa' : !micSupported ? 'Gravação de voz não suportada neste navegador' : 'Não substitui acompanhamento psicológico · CVV: 188'}
               </p>
             </div>
           </div>
