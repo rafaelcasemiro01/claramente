@@ -6,7 +6,7 @@ import { useChat } from '@/hooks/useChat'
 import { audio } from '@/lib/audioEngine'
 import { speechEngine } from '@/lib/speechEngine'
 import {
-  Mic, MicOff, Volume, VolumeOff, Send, Plus, Sparkle,
+  Mic, Volume, VolumeOff, Send, Plus, Sparkle,
   BarChart, Person, LogOut, Sun, Moon, Menu, Stop, Crystal,
 } from '@/components/Icons'
 import type { ConversationItem } from '@/hooks/useChat'
@@ -36,8 +36,7 @@ function RecordWave() {
         <div key={i} style={{
           width: 2, borderRadius: 2, background: '#EF4444',
           animation: `wvBar ${0.3 + (i % 5) * 0.08}s ${i * 0.04}s infinite ease-in-out alternate`,
-          height: `${8 + (i % 4) * 5}px`,
-          opacity: 0.7,
+          height: `${8 + (i % 4) * 5}px`, opacity: 0.7,
         }} />
       ))}
     </div>
@@ -65,9 +64,9 @@ function CrystalLogo({ size = 24, light = false, spin = false }: { size?: number
 
 // ─── Boot sequence ──────────────────────────────────────────────
 function BootSequence({ onComplete }: { onComplete: () => void }) {
-  const [phase, setPhase]   = useState(0)
-  const [prog, setProg]     = useState(0)
-  const [lines, setLines]   = useState<string[]>([])
+  const [phase, setPhase] = useState(0)
+  const [prog, setProg]   = useState(0)
+  const [lines, setLines] = useState<string[]>([])
 
   const bootLines = [
     'SISTEMA NEURAL INICIALIZADO',
@@ -97,12 +96,9 @@ function BootSequence({ onComplete }: { onComplete: () => void }) {
       opacity: phase === 3 ? 0 : 1, transition: phase === 3 ? 'opacity 0.6s ease' : 'none',
       fontFamily: 'monospace',
     }}>
-      {/* Grid */}
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(139,92,246,0.18) 1px, transparent 1px)', backgroundSize: '26px 26px', pointerEvents: 'none' }} />
-      {/* Scan */}
       <div style={{ position: 'absolute', left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.7), transparent)', animation: 'scanLine 2.2s ease-in-out infinite', pointerEvents: 'none' }} />
 
-      {/* Logo */}
       <div style={{ marginBottom: 36, opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? 'scale(1)' : 'scale(0.5)', transition: 'all 0.6s cubic-bezier(0.34,1.56,0.64,1)' }}>
         <CrystalLogo size={72} light spin={phase >= 2} />
       </div>
@@ -150,90 +146,88 @@ function groupConversations(convs: ConversationItem[]) {
   ]
   convs.forEach(c => {
     const d = new Date(c.started_at)
-    if (d >= today) g[0].items.push(c)
-    else if (d >= yest) g[1].items.push(c)
-    else if (d >= week) g[2].items.push(c)
-    else g[3].items.push(c)
+    if (d >= today)      g[0].items.push(c)
+    else if (d >= yest)  g[1].items.push(c)
+    else if (d >= week)  g[2].items.push(c)
+    else                 g[3].items.push(c)
   })
   return g.filter(x => x.items.length > 0)
 }
 
 // ─── Home principal ─────────────────────────────────────────────
 export default function Home() {
-  const navigate  = useNavigate()
-  const { profile, signOut }     = useAuth()
-  const { t, isDark, toggle }    = useTheme()
+  const navigate = useNavigate()
+  const { profile, signOut }  = useAuth()
+  const { t, isDark, toggle } = useTheme()
   const {
     messages, isTyping, isCrisis, isJournalingMode,
     conversationId, conversations, smartSummary, loadingSmartSummary,
     sendMessage, resetChat, loadConversation, startJournaling,
   } = useChat()
 
-  const [input, setInput]           = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isMuted, setIsMuted]       = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
+  const [input, setInput]               = useState('')
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [isMuted, setIsMuted]           = useState(false)
+  const [isRecording, setIsRecording]   = useState(false)
   const [recordingText, setRecordingText] = useState('')
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const [uptime, setUptime]         = useState('00:00:00')
-  const [bootDone, setBootDone]     = useState(() =>
+  const [isSpeaking, setIsSpeaking]     = useState(false)
+  const [uptime, setUptime]             = useState('00:00:00')
+  const [bootDone, setBootDone]         = useState(() =>
     sessionStorage.getItem('claramente-booted') === 'true'
   )
 
-  const startRef   = useRef(Date.now())
-  const bottomRef  = useRef<HTMLDivElement>(null)
+  const startRef    = useRef(Date.now())
+  const bottomRef   = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const prevMsgLen = useRef(0)
-  const speakTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const prevMsgLen  = useRef(0)
+  const speakTimer  = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Uptime
+  // ── Uptime ──────────────────────────────────────────────────
   useEffect(() => {
     const iv = setInterval(() => {
-      const s   = Math.floor((Date.now() - startRef.current) / 1000)
-      const hh  = String(Math.floor(s / 3600)).padStart(2, '0')
-      const mm  = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
-      const ss  = String(s % 60).padStart(2, '0')
+      const s  = Math.floor((Date.now() - startRef.current) / 1000)
+      const hh = String(Math.floor(s / 3600)).padStart(2, '0')
+      const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0')
+      const ss = String(s % 60).padStart(2, '0')
       setUptime(`${hh}:${mm}:${ss}`)
     }, 1000)
     return () => clearInterval(iv)
   }, [])
 
-  // Scroll
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
+  // ── Scroll ──────────────────────────────────────────────────
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isTyping])
 
-  // Boas-vindas por voz
+  // ── TRECHO 1 — Boas-vindas por voz (JARVIS) ─────────────────
   useEffect(() => {
     if (!bootDone) return
-    const t = setTimeout(() => {
-      const name = profile?.name?.split(' ')[0]
-      speechEngine.speak(
-        name ? `Bem-vindo de volta, ${name}. Sistema Claramente ativo.`
-              : 'Bem-vindo ao Claramente. Sistema ativo e pronto.',
-        { priority: true, rate: 0.95 }
-      )
-    }, 600)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => {
+      speechEngine.speakWelcome(profile?.name?.split(' ')[0])
+    }, 700)
+    return () => clearTimeout(timer)
   }, [bootDone, profile?.name])
 
-  // Falar respostas da IA
+  // ── TRECHO 2 — Fala resposta da IA frase por frase ──────────
   useEffect(() => {
     if (messages.length > prevMsgLen.current) {
       const newMsgs = messages.slice(prevMsgLen.current)
-      const last = newMsgs[newMsgs.length - 1]
+      const last    = newMsgs[newMsgs.length - 1]
       if (last?.role === 'assistant') {
         audio.playAIResponse()
-        speechEngine.speak(last.content)
+        // Pequena pausa antes de falar — soa mais natural
+        setTimeout(() => speechEngine.speak(last.content, { rate: 1.02, pitch: 0.92 }), 300)
       }
     }
     prevMsgLen.current = messages.length
   }, [messages])
 
-  // Som quando IA começa a digitar
+  // ── Som quando IA começa a processar ────────────────────────
   useEffect(() => {
     if (isTyping) { audio.playAIStart(); speechEngine.stop() }
   }, [isTyping])
 
-  // Monitor speaking state
+  // ── Monitor estado de fala ──────────────────────────────────
   useEffect(() => {
     speakTimer.current = setInterval(() => {
       setIsSpeaking(speechEngine.isSpeaking())
@@ -241,6 +235,7 @@ export default function Home() {
     return () => { if (speakTimer.current) clearInterval(speakTimer.current) }
   }, [])
 
+  // ── Handlers ────────────────────────────────────────────────
   const handleMute = useCallback(() => {
     const next = !isMuted
     setIsMuted(next)
@@ -286,7 +281,11 @@ export default function Home() {
     setRecordingText('')
     if (isRecording) { speechEngine.stopRecording(); setIsRecording(false) }
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
+
+    // ── TRECHO 3 — Acknowledgment estilo JARVIS ───────────────
     audio.playMessageSent()
+    speechEngine.speakAck(profile?.name?.split(' ')[0])
+
     await sendMessage(text)
   }
 
@@ -308,9 +307,10 @@ export default function Home() {
     setSidebarOpen(false)
   }
 
+  // ── TRECHO 4 — Journaling com voz JARVIS ────────────────────
   async function handleJournaling() {
     audio.playJournaling()
-    speechEngine.speak('Iniciando sessão de journaling guiado. Vamos começar com uma pergunta simples.', { rate: 0.95 })
+    speechEngine.speakJournalingStart()
     prevMsgLen.current = 0
     await startJournaling()
     setSidebarOpen(false)
@@ -337,7 +337,6 @@ export default function Home() {
   function Sidebar() {
     return (
       <aside style={{ width: 256, flexShrink: 0, background: SB.bg, display: 'flex', flexDirection: 'column', height: '100%', borderRight: `0.5px solid ${SB.border}`, position: 'relative', overflow: 'hidden' }}>
-        {/* Grid fundo */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(139,92,246,0.1) 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
 
         {/* Logo */}
@@ -370,7 +369,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Lista */}
+        {/* Lista de conversas */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '2px 8px', position: 'relative' }}>
           <style>{`::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.18);border-radius:2px}`}</style>
           {grouped.length === 0 && (
@@ -424,11 +423,11 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', gap: 2 }}>
             {[
-              { Icon: isDark ? Sun : Moon,       action: toggle,                     title: 'Tema',       color: '#6B6480' },
-              { Icon: isMuted ? VolumeOff : Volume, action: handleMute,              title: 'Som',        color: isMuted ? '#EF4444' : '#6B6480' },
-              { Icon: BarChart,                   action: () => navigate('/relatorios'), title: 'Relatórios', color: '#6B6480' },
-              { Icon: Person,                     action: () => navigate('/perfil'), title: 'Perfil',     color: '#6B6480' },
-              { Icon: LogOut,                     action: signOut,                   title: 'Sair',       color: '#6B6480' },
+              { Icon: isDark ? Sun : Moon,             action: toggle,                        title: 'Tema',       color: '#6B6480' },
+              { Icon: isMuted ? VolumeOff : Volume,    action: handleMute,                    title: 'Som',        color: isMuted ? '#EF4444' : '#6B6480' },
+              { Icon: BarChart,                        action: () => navigate('/relatorios'), title: 'Relatórios', color: '#6B6480' },
+              { Icon: Person,                          action: () => navigate('/perfil'),     title: 'Perfil',     color: '#6B6480' },
+              { Icon: LogOut,                          action: signOut,                       title: 'Sair',       color: '#6B6480' },
             ].map(({ Icon, action, title, color }) => (
               <button key={title} onClick={action} title={title} style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: 'rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.18s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
@@ -442,6 +441,7 @@ export default function Home() {
     )
   }
 
+  // ─── Render ──────────────────────────────────────────────────
   return (
     <>
       {!bootDone && <BootSequence onComplete={handleBootComplete} />}
@@ -450,18 +450,18 @@ export default function Home() {
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
           * { box-sizing: border-box; }
-          @keyframes jRing1  { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
-          @keyframes jRing2  { from{transform:rotate(360deg)} to{transform:rotate(0deg)} }
-          @keyframes wvBar   { from{transform:scaleY(0.15)}   to{transform:scaleY(1)} }
-          @keyframes bootLn  { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
-          @keyframes scanLine{ 0%{top:-2px;opacity:0} 5%{opacity:0.5} 95%{opacity:0.5} 100%{top:100%;opacity:0} }
-          @keyframes fadeUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-          @keyframes pulse   { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
-          @keyframes msgIn   { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-          @keyframes recPulse{ 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+          @keyframes jRing1   { from{transform:rotate(0deg)}   to{transform:rotate(360deg)} }
+          @keyframes jRing2   { from{transform:rotate(360deg)} to{transform:rotate(0deg)} }
+          @keyframes wvBar    { from{transform:scaleY(0.15)}   to{transform:scaleY(1)} }
+          @keyframes bootLn   { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes scanLine { 0%{top:-2px;opacity:0} 5%{opacity:0.5} 95%{opacity:0.5} 100%{top:100%;opacity:0} }
+          @keyframes fadeUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes pulse    { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+          @keyframes msgIn    { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes recPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
           .sb-desktop { display: none; height: 100%; }
           .mob-header { display: flex; }
-          @media(min-width:700px){
+          @media(min-width:700px) {
             .sb-desktop { display: flex !important; }
             .mob-header { display: none !important; }
           }
@@ -489,7 +489,7 @@ export default function Home() {
           {/* Grid holográfico */}
           <div style={{ position: 'absolute', inset: 0, backgroundImage: `radial-gradient(${isDark ? 'rgba(139,92,246,0.055)' : 'rgba(139,92,246,0.035)'} 1px, transparent 1px)`, backgroundSize: '24px 24px', pointerEvents: 'none', zIndex: 0 }} />
 
-          {/* Scan line quando IA pensa */}
+          {/* Scan line quando IA processa */}
           {isTyping && (
             <div style={{ position: 'absolute', left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.55), transparent)', animation: 'scanLine 1.8s ease-in-out infinite', zIndex: 5, pointerEvents: 'none' }} />
           )}
@@ -550,9 +550,7 @@ export default function Home() {
                   {smartSummary && !loadingSmartSummary && (
                     <div style={{ background: t.card, border: `0.5px solid ${t.cardBorder}`, borderRadius: 16, padding: '14px 18px', marginBottom: 20, maxWidth: 400, margin: '0 auto 20px', animation: 'fadeUp 0.4s ease', position: 'relative', overflow: 'hidden' }}>
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.35), transparent)' }} />
-                      <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, margin: 0 }}>
-                        {smartSummary}
-                      </p>
+                      <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, margin: 0 }}>{smartSummary}</p>
                     </div>
                   )}
 
@@ -685,8 +683,7 @@ export default function Home() {
                   width: 40, height: 40, borderRadius: 18, border: 'none', flexShrink: 0,
                   cursor: isTyping || (!input.trim() && !recordingText.trim()) ? 'not-allowed' : 'pointer',
                   background: isTyping || (!input.trim() && !recordingText.trim()) ? t.violetBg : t.violet,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
                   boxShadow: isTyping || (!input.trim() && !recordingText.trim()) ? 'none' : '0 4px 14px rgba(139,92,246,0.45)',
                 }}>
                   <Send size={17} color="white" />
