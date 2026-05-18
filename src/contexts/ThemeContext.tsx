@@ -1,69 +1,104 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 
-type ThemeType = 'light' | 'dark'
-
-export const LIGHT = {
-  bg: '#F8F6FF', card: '#ffffff', cardBorder: '#F0EBFF',
-  header: '#ffffff', headerBorder: '#F0EBFF',
-  text: '#1A0F3C', textSub: '#9B8FCC', textMuted: '#C4B5FD',
-  violet: '#8B5CF6', violetBg: '#EDE9FE', violetDark: '#6D28D9',
-  input: '#F8F6FF', inputBorder: '#EDE9FE', inputFocus: '#8B5CF6',
-  botBubble: '#ffffff', botBorder: '#F0EBFF',
-  userBubble: '#8B5CF6',
-  dot: '#C4B5FD', menu: '#ffffff',
-  tag: '#F5F3FF', tagText: '#6D28D9', tagBorder: '#EDE9FE',
-  darkCard: '#1A0F3C', darkCardText: 'white', darkCardSub: '#9B8FCC',
-  suggCard: '#1A0F3C', suggText: '#C4B5FD', suggNum: '#A78BFA',
-  divider: '#F0EBFF', placeholder: '#C4B5FD',
+export interface Theme {
+  bg: string; surface: string; card: string; cardBorder: string
+  text: string; textSub: string; textMuted: string; placeholder: string
+  violet: string; violetDeep: string; violetBg: string; violetHover: string
+  header: string; headerBorder: string
+  sidebar: string; sidebarBorder: string; sidebarText: string; sidebarMuted: string
+  input: string; inputBorder: string; inputFocus: string
+  userBubble: string; userBorder: string; userText: string
+  botBubble: string; botBorder: string
+  dot: string; scanLine: string
 }
 
-export const DARK = {
-  bg: '#0D0B1A', card: '#1A1535', cardBorder: 'rgba(139,92,246,0.15)',
-  header: '#13102A', headerBorder: 'rgba(139,92,246,0.15)',
-  text: '#F5F3FF', textSub: '#9B8FCC', textMuted: '#6B6480',
-  violet: '#8B5CF6', violetBg: 'rgba(139,92,246,0.2)', violetDark: '#6D28D9',
-  input: '#1E1840', inputBorder: 'rgba(139,92,246,0.2)', inputFocus: '#8B5CF6',
-  botBubble: '#1A1535', botBorder: 'rgba(139,92,246,0.15)',
-  userBubble: '#6D28D9',
-  dot: '#A78BFA', menu: '#13102A',
-  tag: 'rgba(139,92,246,0.15)', tagText: '#C4B5FD', tagBorder: 'rgba(139,92,246,0.2)',
-  darkCard: '#1A1535', darkCardText: '#F5F3FF', darkCardSub: '#6B6480',
-  suggCard: '#1A1535', suggText: '#C4B5FD', suggNum: '#A78BFA',
-  divider: 'rgba(139,92,246,0.1)', placeholder: '#4A4268',
+export const DARK: Theme = {
+  bg:           '#050410',
+  surface:      '#0D0B1A',
+  card:         'rgba(255,255,255,0.04)',
+  cardBorder:   'rgba(255,255,255,0.07)',
+  text:         'rgba(255,255,255,0.88)',
+  textSub:      'rgba(255,255,255,0.55)',
+  textMuted:    'rgba(255,255,255,0.32)',
+  placeholder:  'rgba(255,255,255,0.24)',
+  violet:       '#8B5CF6',
+  violetDeep:   '#7C3AED',
+  violetBg:     'rgba(124,58,237,0.14)',
+  violetHover:  'rgba(124,58,237,0.24)',
+  header:       'rgba(5,4,16,0.92)',
+  headerBorder: 'rgba(255,255,255,0.05)',
+  sidebar:      'rgba(5,4,16,0.94)',
+  sidebarBorder:'rgba(255,255,255,0.05)',
+  sidebarText:  'rgba(255,255,255,0.72)',
+  sidebarMuted: 'rgba(255,255,255,0.24)',
+  input:        'rgba(255,255,255,0.05)',
+  inputBorder:  'rgba(255,255,255,0.09)',
+  inputFocus:   'rgba(139,92,246,0.55)',
+  userBubble:   'rgba(124,58,237,0.22)',
+  userBorder:   'rgba(124,58,237,0.38)',
+  userText:     'rgba(233,228,255,0.95)',
+  botBubble:    'rgba(255,255,255,0.05)',
+  botBorder:    'rgba(255,255,255,0.08)',
+  dot:          'rgba(139,92,246,0.7)',
+  scanLine:     'rgba(124,58,237,0.45)',
 }
 
-const ThemeContext = createContext<{
-  theme: ThemeType
-  t: typeof LIGHT
+export const LIGHT: Theme = {
+  bg:           '#F4F2FF',
+  surface:      '#FFFFFF',
+  card:         'rgba(255,255,255,0.92)',
+  cardBorder:   'rgba(124,58,237,0.12)',
+  text:         '#1A1527',
+  textSub:      '#4A4268',
+  textMuted:    '#8B87A0',
+  placeholder:  '#AEABBE',
+  violet:       '#7C3AED',
+  violetDeep:   '#6D28D9',
+  violetBg:     'rgba(124,58,237,0.09)',
+  violetHover:  'rgba(124,58,237,0.16)',
+  header:       'rgba(255,255,255,0.96)',
+  headerBorder: 'rgba(124,58,237,0.1)',
+  sidebar:      'rgba(255,255,255,0.96)',
+  sidebarBorder:'rgba(124,58,237,0.1)',
+  sidebarText:  '#2D2440',
+  sidebarMuted: '#9490A6',
+  input:        'rgba(255,255,255,0.96)',
+  inputBorder:  'rgba(124,58,237,0.18)',
+  inputFocus:   '#7C3AED',
+  userBubble:   'rgba(124,58,237,0.14)',
+  userBorder:   'rgba(124,58,237,0.25)',
+  userText:     '#1A1527',
+  botBubble:    '#FFFFFF',
+  botBorder:    'rgba(124,58,237,0.12)',
+  dot:          'rgba(124,58,237,0.6)',
+  scanLine:     'rgba(124,58,237,0.3)',
+}
+
+interface ThemeCtx {
+  t: Theme
   isDark: boolean
   toggle: () => void
-}>({ theme: 'light', t: LIGHT, isDark: false, toggle: () => {} })
+}
+
+const Ctx = createContext<ThemeCtx>({ t: DARK, isDark: true, toggle: () => {} })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<ThemeType>(() =>
-    (localStorage.getItem('claramente-theme') as ThemeType) || 'light'
-  )
-
-  const isDark = theme === 'dark'
-  const t = isDark ? DARK : LIGHT
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('claramente-theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
 
   useEffect(() => {
-    localStorage.setItem('claramente-theme', theme)
-    document.body.style.background = t.bg
-  }, [theme, t.bg])
-
-  function toggle() {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light')
-  }
+    localStorage.setItem('claramente-theme', isDark ? 'dark' : 'light')
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+  }, [isDark])
 
   return (
-    <ThemeContext.Provider value={{ theme, t, isDark, toggle }}>
+    <Ctx.Provider value={{ t: isDark ? DARK : LIGHT, isDark, toggle: () => setIsDark(p => !p) }}>
       {children}
-    </ThemeContext.Provider>
+    </Ctx.Provider>
   )
 }
 
-export function useTheme() {
-  return useContext(ThemeContext)
-}
+export const useTheme = () => useContext(Ctx)
