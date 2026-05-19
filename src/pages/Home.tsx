@@ -15,28 +15,18 @@ import {
 } from '@/components/Icons'
 import type { ConversationItem } from '@/hooks/useChat'
 
-// ─── Bot avatar ────────────────────────────────────────────────
 function BotAvatar({ size = 26, accent }: { size?: number; accent: string }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      background: `${accent}18`,
-      border: `1px solid ${accent}28`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
+      background: `${accent}18`, border: `1px solid ${accent}28`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
-      <Crystal
-        size={size * 0.52}
-        color={accent}
-        dim={`${accent}22`}
-        mid={`${accent}30`}
-        line={`${accent}60`}
-      />
+      <Crystal size={size * 0.52} color={accent} dim={`${accent}22`} mid={`${accent}30`} line={`${accent}60`} />
     </div>
   )
 }
 
-// ─── Typing indicator ──────────────────────────────────────────
 function TypingDots({ color }: { color: string }) {
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '4px 0' }}>
@@ -51,7 +41,6 @@ function TypingDots({ color }: { color: string }) {
   )
 }
 
-// ─── Action card ───────────────────────────────────────────────
 function ActionCard({
   title, subtitle, Icon, accent = false,
   isDark, accentColor, onClick,
@@ -66,6 +55,8 @@ function ActionCard({
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
+        // ── altura igual para todos os cards ──
+        height: '100%',
         padding: '16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
         display: 'flex', flexDirection: 'column', gap: 5,
         background: accent
@@ -86,8 +77,7 @@ function ActionCard({
         <div style={{
           width: 28, height: 28, borderRadius: 7,
           background: accent ? `${accentColor}18` : (isDark ? '#272727' : '#F4F4F5'),
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 2,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 2,
         }}>
           <Icon size={14} color={accent ? accentColor : (isDark ? '#A0A0A0' : '#6B6B6B')} />
         </div>
@@ -106,7 +96,6 @@ function ActionCard({
   )
 }
 
-// ─── Typewriter ────────────────────────────────────────────────
 function Typewriter({ text, speed = 35, onDone }: { text: string; speed?: number; onDone?: () => void }) {
   const [shown, setShown] = useState('')
   const [done, setDone]   = useState(false)
@@ -121,7 +110,6 @@ function Typewriter({ text, speed = 35, onDone }: { text: string; speed?: number
   return <>{shown}{!done && <span style={{ opacity: 0.3, animation: 'blink 1s infinite' }}>|</span>}</>
 }
 
-// ─── Group conversations ───────────────────────────────────────
 function groupConvs(convs: ConversationItem[]) {
   const now   = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -143,9 +131,6 @@ function groupConvs(convs: ConversationItem[]) {
   return g.filter(x => x.items.length > 0)
 }
 
-// ═══════════════════════════════════════════════════════════════
-// HOME
-// ═══════════════════════════════════════════════════════════════
 export default function Home() {
   const navigate = useNavigate()
   const { profile, signOut }  = useAuth()
@@ -178,50 +163,44 @@ export default function Home() {
   const firstName = profile?.name?.split(' ')[0] || 'você'
   const ACCENT    = isDark ? '#8B5CF6' : '#7C3AED'
 
-  // ─── tokens ─────────────────────────────────────────────────
   const C = isDark ? {
-    bg:         '#111111',
-    surface:    '#1A1A1A',
-    border:     '#272727',
-    borderHov:  '#383838',
-    sidebar:    '#161616',
-    sidebarB:   '#272727',
-    text:       '#F5F5F5',
-    textSub:    '#A0A0A0',
-    textMuted:  '#606060',
-    accent:     '#8B5CF6',
-    accentBg:   '#1E1535',
-    userBubble: '#1E1535',
-    userBorder: '#3D2B6B',
-    userText:   '#DDD6FE',
-    botBubble:  '#1A1A1A',
-    inputBg:    '#1A1A1A',
-    inputBorder:'#2E2E2E',
-    placeholder:'#404040',
-    btnBg:      '#272727',
+    bg:          '#111111',
+    surface:     '#1A1A1A',
+    border:      '#272727',
+    borderHov:   '#383838',
+    sidebar:     '#161616',
+    sidebarB:    '#272727',
+    text:        '#F5F5F5',
+    textSub:     '#A0A0A0',
+    textMuted:   '#606060',
+    accentBg:    '#1E1535',
+    userBubble:  '#1E1535',
+    userBorder:  '#3D2B6B',
+    userText:    '#DDD6FE',
+    inputBg:     '#1A1A1A',
+    inputBorder: '#2E2E2E',
+    placeholder: '#404040',
+    btnBg:       '#272727',
   } : {
-    bg:         '#F7F7F8',
-    surface:    '#FFFFFF',
-    border:     '#E8E8E8',
-    borderHov:  '#C8C8C8',
-    sidebar:    '#FFFFFF',
-    sidebarB:   '#E8E8E8',
-    text:       '#0F0F0F',
-    textSub:    '#6B6B6B',
-    textMuted:  '#9B9B9B',
-    accent:     '#7C3AED',
-    accentBg:   '#F4F0FF',
-    userBubble: '#F4F0FF',
-    userBorder: '#E2D9FF',
-    userText:   '#4C1D95',
-    botBubble:  '#FFFFFF',
-    inputBg:    '#FFFFFF',
-    inputBorder:'#E2E2E2',
-    placeholder:'#ACACAC',
-    btnBg:      '#F4F4F5',
+    bg:          '#F7F7F8',
+    surface:     '#FFFFFF',
+    border:      '#E8E8E8',
+    borderHov:   '#C8C8C8',
+    sidebar:     '#FFFFFF',
+    sidebarB:    '#E8E8E8',
+    text:        '#0F0F0F',
+    textSub:     '#6B6B6B',
+    textMuted:   '#9B9B9B',
+    accentBg:    '#F4F0FF',
+    userBubble:  '#F4F0FF',
+    userBorder:  '#E2D9FF',
+    userText:    '#4C1D95',
+    inputBg:     '#FFFFFF',
+    inputBorder: '#E2E2E2',
+    placeholder: '#ACACAC',
+    btnBg:       '#F4F4F5',
   }
 
-  // ─── effects ────────────────────────────────────────────────
   useEffect(() => { setTimeout(() => setMounted(true), 50) }, [])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
   useEffect(() => emotionEngine.subscribe(setEmotion), [])
@@ -245,12 +224,12 @@ export default function Home() {
   }, [messages])
 
   useEffect(() => { if (isTyping) { audio.playAIStart(); speechEngine.stop() } }, [isTyping])
+
   useEffect(() => {
     spkIv.current = setInterval(() => setSpeaking(speechEngine.isSpeaking()), 200)
     return () => { if (spkIv.current) clearInterval(spkIv.current) }
   }, [])
 
-  // ─── handlers ───────────────────────────────────────────────
   const handleMute = useCallback(() => {
     const n = !muted; setMuted(n); speechEngine.setMuted(n)
     if (n) speechEngine.stop(); audio.playClick()
@@ -285,29 +264,24 @@ export default function Home() {
     await sendMessage(txt)
   }
 
-  const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
-  const newChat  = () => { prevLen.current = 0; resetChat(); setSidebarOpen(false) }
-  const loadConv = (id: string) => async () => { prevLen.current = 0; await loadConversation(id); setSidebarOpen(false) }
-  const journal  = async () => { audio.init(); audio.playJournaling(); speechEngine.speakJournalingStart(); prevLen.current = 0; await startJournaling(); setSidebarOpen(false) }
+  const onKey     = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
+  const newChat   = () => { prevLen.current = 0; resetChat(); setSidebarOpen(false) }
+  const loadConv  = (id: string) => async () => { prevLen.current = 0; await loadConversation(id); setSidebarOpen(false) }
+  const journal   = async () => { audio.init(); audio.playJournaling(); speechEngine.speakJournalingStart(); prevLen.current = 0; await startJournaling(); setSidebarOpen(false) }
 
-  // ─── Global CSS ─────────────────────────────────────────────
   const CSS = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { -webkit-text-size-adjust: 100%; font-family: 'Inter', sans-serif; }
     body { -webkit-font-smoothing: antialiased; }
-
-    @keyframes tdot  { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-    @keyframes fIn   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes mIn   { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes sIn   { from{opacity:0;transform:translateX(-100%)} to{opacity:1;transform:translateX(0)} }
-    @keyframes spin  { to{transform:rotate(360deg)} }
-
+    @keyframes fIn  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes mIn  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes sIn  { from{opacity:0;transform:translateX(-100%)} to{opacity:1;transform:translateX(0)} }
     .sb  { display: none !important; height: 100%; }
     .mhd { display: flex; }
     @media (min-width: 768px) { .sb { display: flex !important; } .mhd { display: none !important; } }
-
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: ${isDark ? '#333' : '#D4D4D4'}; border-radius: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -315,17 +289,13 @@ export default function Home() {
     textarea::placeholder { color: ${C.placeholder} !important; font-family: 'Inter', sans-serif; }
   `
 
-  // ═══════════════════════════════════════════════════════════
-  // SIDEBAR
-  // ═══════════════════════════════════════════════════════════
+  // ─── SIDEBAR ────────────────────────────────────────────────
   function Sidebar() {
     return (
       <aside style={{
         width: 256, flexShrink: 0, height: '100%',
         display: 'flex', flexDirection: 'column',
-        background: C.sidebar,
-        borderRight: `1px solid ${C.sidebarB}`,
-        position: 'relative',
+        background: C.sidebar, borderRight: `1px solid ${C.sidebarB}`,
       }}>
 
         {/* Brand */}
@@ -338,16 +308,7 @@ export default function Home() {
               Claramente
             </span>
           </div>
-
-          <button
-            onClick={newChat}
-            style={{
-              width: '100%', height: 36, borderRadius: 8, border: 'none',
-              background: ACCENT, color: '#FFFFFF',
-              fontSize: 13, fontWeight: 600, fontFamily: "'Inter',sans-serif",
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 7, transition: 'all 0.15s ease', WebkitTapHighlightColor: 'transparent',
-            }}
+          <button onClick={newChat} style={{ width: '100%', height: 36, borderRadius: 8, border: 'none', background: ACCENT, color: '#FFFFFF', fontSize: 13, fontWeight: 600, fontFamily: "'Inter',sans-serif", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent' }}
             onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.1)')}
             onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}>
             <Plus size={14} color="#FFFFFF" />
@@ -355,7 +316,7 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Conversation list */}
+        {/* Conversations */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
           {grouped.length === 0 && (
             <p style={{ fontSize: 13, color: C.textMuted, padding: '24px 8px', textAlign: 'center', fontFamily: "'Inter',sans-serif", lineHeight: 1.6 }}>
@@ -370,18 +331,7 @@ export default function Home() {
               {g.items.map(c => {
                 const active = conversationId === c.id
                 return (
-                  <button
-                    key={c.id}
-                    onClick={loadConv(c.id)}
-                    style={{
-                      width: '100%', textAlign: 'left', padding: '9px 10px',
-                      borderRadius: 8, border: 'none', cursor: 'pointer',
-                      background: active ? C.accentBg : 'transparent',
-                      color: active ? ACCENT : C.textSub,
-                      display: 'block', marginBottom: 1,
-                      transition: 'all 0.12s ease', WebkitTapHighlightColor: 'transparent',
-                      minHeight: 40,
-                    }}
+                  <button key={c.id} onClick={loadConv(c.id)} style={{ width: '100%', textAlign: 'left', padding: '9px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: active ? C.accentBg : 'transparent', display: 'block', marginBottom: 1, transition: 'all 0.12s', WebkitTapHighlightColor: 'transparent', minHeight: 40 }}
                     onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.surface }}
                     onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
                     <p style={{ fontSize: 13, fontWeight: active ? 600 : 400, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Inter',sans-serif", color: active ? ACCENT : C.text }}>
@@ -397,26 +347,15 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Journaling quick access */}
+        {/* Journaling + HUD */}
         <div style={{ padding: '8px', borderTop: `1px solid ${C.border}` }}>
-          <button
-            onClick={journal}
-            style={{
-              width: '100%', padding: '9px 10px', borderRadius: 8, border: `1px solid ${C.border}`,
-              background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-              color: C.textSub, fontSize: 13, fontWeight: 500, fontFamily: "'Inter',sans-serif",
-              transition: 'all 0.12s ease', WebkitTapHighlightColor: 'transparent',
-            }}
+          <button onClick={journal} style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, color: C.textSub, fontSize: 13, fontWeight: 500, fontFamily: "'Inter',sans-serif", transition: 'all 0.12s', WebkitTapHighlightColor: 'transparent' }}
             onMouseEnter={e => { e.currentTarget.style.background = C.accentBg; e.currentTarget.style.color = ACCENT; e.currentTarget.style.borderColor = `${ACCENT}30` }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.textSub; e.currentTarget.style.borderColor = C.border }}>
             <Sparkle size={14} color="currentColor" />
             Journaling guiado
           </button>
-
-          {/* HUD toggle */}
-          <button
-            onClick={() => setHudOpen(p => !p)}
-            style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: C.textMuted, fontSize: 11, fontWeight: 600, fontFamily: "'Inter',sans-serif", letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 2, WebkitTapHighlightColor: 'transparent' }}
+          <button onClick={() => setHudOpen(p => !p)} style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: C.textMuted, fontSize: 11, fontWeight: 600, fontFamily: "'Inter',sans-serif", letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 2, WebkitTapHighlightColor: 'transparent' }}
             onMouseEnter={e => (e.currentTarget.style.background = C.surface)}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
             <span>Diagnóstico</span>
@@ -438,11 +377,11 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', gap: 2 }}>
             {([
-              [isDark ? Sun : Moon, toggle,                       'Tema'  ],
-              [muted ? VolumeOff : Volume, handleMute,            'Som'   ],
-              [BarChart, () => navigate('/relatorios'),            'Relat.'],
-              [Person,   () => navigate('/perfil'),               'Perfil'],
-              [LogOut,   signOut,                                 'Sair'  ],
+              [isDark ? Sun : Moon,            toggle,                        'Tema'  ],
+              [muted ? VolumeOff : Volume,     handleMute,                    'Som'   ],
+              [BarChart, () => navigate('/relatorios'),                        'Relat.'],
+              [Person,   () => navigate('/perfil'),                           'Perfil'],
+              [LogOut,   signOut,                                             'Sair'  ],
             ] as [React.ElementType, () => void, string][]).map(([Ic, fn, title]) => (
               <button key={title} onClick={fn} title={title} style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.12s', WebkitTapHighlightColor: 'transparent' }}
                 onMouseEnter={e => (e.currentTarget.style.background = C.surface)}
@@ -456,17 +395,13 @@ export default function Home() {
     )
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════
+  // ─── RENDER ─────────────────────────────────────────────────
   return (
     <div style={{ height: '100dvh', display: 'flex', background: C.bg, fontFamily: "'Inter',sans-serif", position: 'relative', overflow: 'hidden', opacity: mounted ? 1 : 0, transition: 'opacity 0.3s ease' }}>
       <style>{CSS}</style>
 
-      {/* Sidebar desktop */}
       <div className="sb"><Sidebar /></div>
 
-      {/* Sidebar mobile overlay */}
       {sidebarOpen && (
         <>
           <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40, backdropFilter: 'blur(4px)' }} />
@@ -476,16 +411,10 @@ export default function Home() {
         </>
       )}
 
-      {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Mobile header */}
-        <header className="mhd" style={{
-          background: C.sidebar, borderBottom: `1px solid ${C.border}`,
-          height: 52, padding: '0 16px',
-          alignItems: 'center', justifyContent: 'space-between',
-          flexShrink: 0, position: 'relative', zIndex: 10,
-        }}>
+        <header className="mhd" style={{ background: C.sidebar, borderBottom: `1px solid ${C.border}`, height: 52, padding: '0 16px', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, zIndex: 10 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 8, WebkitTapHighlightColor: 'transparent' }}>
             <Menu size={18} color={C.textSub} />
           </button>
@@ -518,90 +447,81 @@ export default function Home() {
 
         {/* Messages */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 12px' }}>
-          <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
 
             {/* ── Welcome ── */}
             {messages.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px 24px', animation: 'fIn 0.4s ease' }}>
 
-                {/* Logo */}
                 <div style={{ width: 48, height: 48, borderRadius: 14, background: C.accentBg, border: `1px solid ${ACCENT}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                   <Crystal size={26} color={ACCENT} dim={`${ACCENT}25`} mid={`${ACCENT}35`} line={`${ACCENT}60`} />
                 </div>
 
-                {/* Heading */}
                 <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: 'clamp(20px,4vw,26px)', fontWeight: 700, color: C.text, marginBottom: 8, textAlign: 'center', letterSpacing: -0.5, lineHeight: 1.2 }}>
                   {!greetDone
                     ? <Typewriter text={`Olá, ${firstName}`} speed={45} onDone={() => setGreetDone(true)} />
                     : `Olá, ${firstName}`}
                 </h2>
 
-                {/* Subtitle */}
                 {loadingSmartSummary && (
-                  <div style={{ marginBottom: 20 }}>
-                    <TypingDots color={ACCENT} />
-                  </div>
+                  <div style={{ marginBottom: 20 }}><TypingDots color={ACCENT} /></div>
                 )}
 
-                {smartSummary && !loadingSmartSummary ? (
+                {smartSummary && !loadingSmartSummary && (
                   <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24, maxWidth: 440, width: '100%', animation: 'fIn 0.4s ease' }}>
                     <p style={{ fontSize: 14, fontWeight: 400, color: C.textSub, lineHeight: 1.7, margin: 0, fontFamily: "'Inter',sans-serif", fontStyle: 'italic' }}>{smartSummary}</p>
                   </div>
-                ) : !loadingSmartSummary && greetDone ? (
+                )}
+
+                {!smartSummary && !loadingSmartSummary && greetDone && (
                   <p style={{ fontSize: 14, fontWeight: 400, color: C.textSub, textAlign: 'center', marginBottom: 4, lineHeight: 1.7, fontFamily: "'Inter',sans-serif", maxWidth: 300 }}>
                     Como posso te ajudar hoje?
                   </p>
-                ) : null}
+                )}
 
-                {/* Action cards — 2×2 grid */}
+                {/* ── Action cards 2×2 com alturas iguais ── */}
                 {greetDone && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 20, width: '100%', maxWidth: 440, animation: 'fIn 0.4s ease 0.1s both' }}>
-                    <ActionCard title="Journaling guiado" subtitle="Sessão reflexiva profunda" Icon={Sparkle} accent accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); journal() }} />
-                    <ActionCard title="Estou ansioso" subtitle="Preciso conversar sobre isso" accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); sendMessage('Estou me sentindo ansioso ultimamente.') }} />
-                    <ActionCard title="Quero refletir" subtitle="Momento de introspecção" accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); sendMessage('Quero fazer uma reflexão sobre minha vida.') }} />
-                    <ActionCard title="Me sinto bem" subtitle="Compartilhar gratidão" accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); sendMessage('Estou me sentindo bem hoje!') }} />
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gridAutoRows: '1fr',        // ← todas as linhas mesma altura
+                    gap: 8,
+                    marginTop: 20,
+                    width: '100%',
+                    maxWidth: 440,
+                    animation: 'fIn 0.4s ease 0.1s both',
+                  }}>
+                    <ActionCard title="Journaling guiado"  subtitle="Sessão reflexiva profunda"   Icon={Sparkle} accent accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); journal() }} />
+                    <ActionCard title="Estou ansioso"       subtitle="Preciso conversar sobre isso"             accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); sendMessage('Estou me sentindo ansioso ultimamente.') }} />
+                    <ActionCard title="Quero refletir"      subtitle="Momento de introspecção"                  accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); sendMessage('Quero fazer uma reflexão sobre minha vida.') }} />
+                    <ActionCard title="Me sinto bem"        subtitle="Compartilhar gratidão"                    accentColor={ACCENT} isDark={isDark} onClick={() => { audio.init(); sendMessage('Estou me sentindo bem hoje!') }} />
                   </div>
                 )}
               </div>
             )}
 
-            {/* Proactive suggestion */}
+            {/* Proactive */}
             {suggestion && (
               <div style={{ marginBottom: 16 }}>
                 <ProactiveCard message={suggestion.message} action={suggestion.action} onAccept={() => { dismiss(); sendMessage(suggestion.prompt) }} onDismiss={dismiss} delay={500} />
               </div>
             )}
 
-            {/* ── Messages ── */}
-            {messages.map((msg, idx) => {
+            {/* Messages list */}
+            {messages.map(msg => {
               const isUser = msg.role === 'user'
-              const isLast = idx === messages.length - 1
               return (
-                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: isLast ? 0 : 4, animation: 'mIn 0.25s ease' }}>
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: 4, animation: 'mIn 0.25s ease' }}>
                   {isUser ? (
-                    /* User message */
                     <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0' }}>
-                      <div style={{
-                        maxWidth: 'min(72%, 520px)', padding: '10px 14px',
-                        borderRadius: '16px 16px 4px 16px',
-                        background: C.userBubble, border: `1px solid ${C.userBorder}`,
-                        fontSize: 14.5, fontWeight: 400, lineHeight: 1.7,
-                        color: C.userText, fontFamily: "'Inter',sans-serif",
-                        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                      }}>
+                      <div style={{ maxWidth: 'min(72%,520px)', padding: '10px 14px', borderRadius: '16px 16px 4px 16px', background: C.userBubble, border: `1px solid ${C.userBorder}`, fontSize: 14.5, fontWeight: 400, lineHeight: 1.7, color: C.userText, fontFamily: "'Inter',sans-serif", whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {msg.content}
                       </div>
                     </div>
                   ) : (
-                    /* Bot message */
                     <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '6px 0' }}>
                       <BotAvatar size={28} accent={ACCENT} />
-                      <div style={{
-                        flex: 1, minWidth: 0, paddingTop: 4,
-                        fontSize: 14.5, fontWeight: 400, lineHeight: 1.75,
-                        color: C.text, fontFamily: "'Inter',sans-serif",
-                        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                      }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingTop: 4, fontSize: 14.5, fontWeight: 400, lineHeight: 1.75, color: C.text, fontFamily: "'Inter',sans-serif", whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {msg.content}
                       </div>
                     </div>
@@ -610,13 +530,11 @@ export default function Home() {
               )
             })}
 
-            {/* Typing indicator */}
+            {/* Typing */}
             {isTyping && (
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '6px 0', animation: 'fIn 0.2s ease' }}>
                 <BotAvatar size={28} accent={ACCENT} />
-                <div style={{ paddingTop: 8 }}>
-                  <TypingDots color={ACCENT} />
-                </div>
+                <div style={{ paddingTop: 8 }}><TypingDots color={ACCENT} /></div>
               </div>
             )}
 
@@ -625,64 +543,30 @@ export default function Home() {
         </div>
 
         {/* ── Input bar ── */}
-        <div style={{
-          padding: '12px 20px',
-          paddingBottom: `max(12px, env(safe-area-inset-bottom, 12px))`,
-          background: C.bg,
-          borderTop: `1px solid ${C.border}`,
-          flexShrink: 0,
-        }}>
+        <div style={{ padding: '12px 20px', paddingBottom: `max(12px, env(safe-area-inset-bottom, 12px))`, background: C.bg, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
           <div style={{ maxWidth: 680, margin: '0 auto' }}>
             <div
-              style={{
-                display: 'flex', gap: 8, alignItems: 'flex-end',
-                background: C.inputBg,
-                borderRadius: 14,
-                padding: '8px',
-                border: `1px solid ${recording ? 'rgba(239,68,68,0.5)' : C.inputBorder}`,
-                boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06)',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-              }}
-              onFocusCapture={e => {
-                e.currentTarget.style.borderColor = recording ? 'rgba(239,68,68,0.6)' : ACCENT
-                e.currentTarget.style.boxShadow = `0 0 0 3px ${ACCENT}12`
-              }}
-              onBlurCapture={e => {
-                e.currentTarget.style.borderColor = recording ? 'rgba(239,68,68,0.5)' : C.inputBorder
-                e.currentTarget.style.boxShadow = isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06)'
-              }}
+              style={{ display: 'flex', gap: 8, alignItems: 'flex-end', background: C.inputBg, borderRadius: 14, padding: '8px', border: `1px solid ${recording ? 'rgba(239,68,68,0.5)' : C.inputBorder}`, boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06)', transition: 'border-color 0.15s, box-shadow 0.15s' }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = recording ? 'rgba(239,68,68,0.6)' : ACCENT; e.currentTarget.style.boxShadow = `0 0 0 3px ${ACCENT}12` }}
+              onBlurCapture={e => { e.currentTarget.style.borderColor = recording ? 'rgba(239,68,68,0.5)' : C.inputBorder; e.currentTarget.style.boxShadow = isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06)' }}
             >
-
-              {/* Mic button */}
               {micOk && (
-                <button
-                  onClick={handleMic}
-                  title={recording ? 'Parar gravação' : 'Gravar áudio'}
-                  style={{
-                    width: 36, height: 36, borderRadius: 9, border: 'none', flexShrink: 0,
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: recording ? 'rgba(239,68,68,0.1)' : C.btnBg,
-                    transition: 'all 0.15s ease', WebkitTapHighlightColor: 'transparent',
-                    animation: recording ? 'pulse 1.5s infinite' : 'none',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = recording ? 'rgba(239,68,68,0.18)' : (isDark ? '#333' : '#EBEBEB') }}
-                  onMouseLeave={e => { e.currentTarget.style.background = recording ? 'rgba(239,68,68,0.1)' : C.btnBg }}>
-                  {recording ? <Stop size={14} color="#EF4444" /> : <Mic size={16} color={C.textSub} />}
+                <button onClick={handleMic} title={recording ? 'Parar' : 'Gravar áudio'} style={{ width: 36, height: 36, borderRadius: 9, border: 'none', flexShrink: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: recording ? 'rgba(239,68,68,0.1)' : C.btnBg, transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent' }}
+                  onMouseEnter={e => e.currentTarget.style.background = recording ? 'rgba(239,68,68,0.18)' : (isDark ? '#333' : '#EBEBEB')}
+                  onMouseLeave={e => e.currentTarget.style.background = recording ? 'rgba(239,68,68,0.1)' : C.btnBg}>
+                  {recording ? <Stop size={13} color="#EF4444" /> : <Mic size={16} color={C.textSub} />}
                 </button>
               )}
 
-              {/* Text area */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 {recording && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px 0' }}>
-                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                       {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} style={{ width: 2, borderRadius: 2, background: '#EF4444', opacity: 0.6, animation: `tdot ${0.5 + (i % 4) * 0.12}s ${i * 0.07}s infinite`, height: `${8 + (i % 4) * 4}px` }} />
                       ))}
                     </div>
-                    <span style={{ fontSize: 14, color: '#EF4444', fontFamily: "'Inter',sans-serif", fontWeight: 400 }}>
-                      {recText || 'Ouvindo...'}
-                    </span>
+                    <span style={{ fontSize: 14, color: '#EF4444', fontFamily: "'Inter',sans-serif" }}>{recText || 'Ouvindo...'}</span>
                   </div>
                 )}
                 {!recording && (
@@ -692,43 +576,20 @@ export default function Home() {
                     onKeyDown={onKey}
                     placeholder={isJournalingMode ? 'Escreva sua reflexão...' : 'Como você está se sentindo?'}
                     rows={1}
-                    style={{
-                      width: '100%', background: 'none', border: 'none', outline: 'none',
-                      fontSize: 14.5, fontWeight: 400, lineHeight: 1.6, resize: 'none',
-                      color: C.text, maxHeight: 120, padding: '7px 4px',
-                      display: 'block', WebkitAppearance: 'none',
-                    }}
+                    style={{ width: '100%', background: 'none', border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 400, lineHeight: 1.6, resize: 'none', fontFamily: "'Inter',sans-serif", color: C.text, maxHeight: 120, padding: '7px 4px', display: 'block', WebkitAppearance: 'none' }}
                   />
                 )}
               </div>
 
-              {/* Send button */}
-              <button
-                onClick={handleSend}
-                disabled={isTyping || (!input.trim() && !recText.trim())}
-                style={{
-                  width: 36, height: 36, borderRadius: 9, border: 'none', flexShrink: 0,
-                  cursor: isTyping || (!input.trim() && !recText.trim()) ? 'not-allowed' : 'pointer',
-                  background: isTyping || (!input.trim() && !recText.trim()) ? C.btnBg : ACCENT,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.15s ease', WebkitTapHighlightColor: 'transparent',
-                }}
+              <button onClick={handleSend} disabled={isTyping || (!input.trim() && !recText.trim())} style={{ width: 36, height: 36, borderRadius: 9, border: 'none', flexShrink: 0, cursor: isTyping || (!input.trim() && !recText.trim()) ? 'not-allowed' : 'pointer', background: isTyping || (!input.trim() && !recText.trim()) ? C.btnBg : ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent' }}
                 onMouseEnter={e => { if (!isTyping && input.trim()) e.currentTarget.style.filter = 'brightness(1.12)' }}
-                onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)' }}>
-                <Send
-                  size={15}
-                  color={isTyping || (!input.trim() && !recText.trim()) ? C.textMuted : '#FFFFFF'}
-                />
+                onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+                <Send size={15} color={isTyping || (!input.trim() && !recText.trim()) ? C.textSub : '#FFFFFF'} />
               </button>
             </div>
 
-            {/* Caption */}
             <p style={{ textAlign: 'center', fontSize: 11, fontWeight: 400, color: C.textMuted, marginTop: 8, fontFamily: "'Inter',sans-serif" }}>
-              {isJournalingMode
-                ? 'Sessão de journaling guiado ativa'
-                : !micOk
-                ? 'Gravação de voz não suportada neste navegador'
-                : 'Não substitui acompanhamento psicológico · CVV: 188'}
+              {isJournalingMode ? 'Sessão de journaling guiado ativa' : !micOk ? 'Gravação de voz não suportada neste navegador' : 'Não substitui acompanhamento psicológico · CVV: 188'}
             </p>
           </div>
         </div>
