@@ -1,311 +1,424 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { validateEmail } from '@/lib/emailValidator'
 
 type Mode = 'login' | 'signup' | 'forgot'
 
-const PASSWORD_RULES = [
+const PW_RULES = [
   { label: 'Mínimo 8 caracteres',           test: (p: string) => p.length >= 8 },
-  { label: 'Uma letra maiúscula (A-Z)',       test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'Um número (0-9)',                 test: (p: string) => /[0-9]/.test(p) },
-  { label: 'Um caractere especial (!@#$%&*)', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+  { label: 'Uma letra maiúscula',            test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'Um número',                      test: (p: string) => /[0-9]/.test(p) },
+  { label: 'Um caractere especial (!@#$%)',  test: (p: string) => /[!@#$%^&*(),.?]/.test(p) },
 ]
 
-function getStrength(p: string) {
-  const score = PASSWORD_RULES.filter(r => r.test(p)).length
-  if (score <= 1) return { score: 1, label: 'Muito fraca', color: '#EF4444' }
-  if (score === 2) return { score: 2, label: 'Fraca',      color: '#F59E0B' }
-  if (score === 3) return { score: 3, label: 'Boa',        color: '#8B5CF6' }
-  return             { score: 4, label: 'Forte ✓',         color: '#22C55E' }
+function pwStrength(p: string) {
+  const n = PW_RULES.filter(r => r.test(p)).length
+  if (n <= 1) return { score: 1, label: 'Muito fraca', color: '#EF4444' }
+  if (n === 2) return { score: 2, label: 'Fraca',      color: '#F59E0B' }
+  if (n === 3) return { score: 3, label: 'Boa',        color: '#8B5CF6' }
+  return              { score: 4, label: 'Forte',       color: '#22C55E' }
 }
 
-function CrystalLogo({ size = 56 }: { size?: number }) {
+function validateEmail(email: string): { valid: boolean; message: string; type: string } {
+  if (!email) return { valid: false, message: '', type: 'idle' }
+  const trimmed = email.trim().toLowerCase()
+  if (!trimmed.includes('@')) return { valid: false, message: 'E-mail deve conter @', type: 'error' }
+  const [local, domain] = trimmed.split('@')
+  if (!local || local.length < 2) return { valid: false, message: 'Parte antes do @ muito curta', type: 'error' }
+  if (!domain) return { valid: false, message: 'Informe o domínio (ex: gmail.com)', type: 'error' }
+  const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/
+  if (!regex.test(trimmed)) return { valid: false, message: 'Formato de e-mail inválido', type: 'error' }
+  const disposable = ['mailinator.com','guerrillamail.com','tempmail.com','yopmail.com','throwaway.email','trashmail.com','fakeinbox.com','10minutemail.com','maildrop.cc']
+  const dom = trimmed.split('@')[1]
+  if (disposable.includes(dom)) return { valid: false, message: 'E-mails temporários não são aceitos', type: 'error' }
+  return { valid: true, message: 'E-mail válido ✓', type: 'valid' }
+}
+
+// ─── Logo SVG ────────────────────────────────────────────────
+function Logo() {
   return (
-    <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
-      <path d="M28 4L50 18V38L28 52L6 38V18Z" fill="rgba(255,255,255,0.15)" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-      <path d="M28 4L6 18H50Z" fill="rgba(255,255,255,0.3)"/>
-      <line x1="6"  y1="18" x2="28" y2="30" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2"/>
-      <line x1="50" y1="18" x2="28" y2="30" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2"/>
-      <circle cx="28" cy="30" r="3" fill="white"/>
+    <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F4F0FF', border: '1px solid #E2D9FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width="18" height="18" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M28 4L50 18V38L28 52L6 38V18Z" fill="rgba(124,58,237,0.15)" stroke="#7C3AED" strokeWidth="1.5" strokeLinejoin="round"/>
+        <path d="M28 4L6 18H50Z" fill="rgba(124,58,237,0.3)"/>
+        <line x1="6"  y1="18" x2="28" y2="30" stroke="rgba(124,58,237,0.6)" strokeWidth="1.2"/>
+        <line x1="50" y1="18" x2="28" y2="30" stroke="rgba(124,58,237,0.6)" strokeWidth="1.2"/>
+        <circle cx="28" cy="30" r="3" fill="#7C3AED"/>
+      </svg>
+    </div>
+  )
+}
+
+// ─── Check icon ──────────────────────────────────────────────
+function CheckIcon() {
+  return (
+    <svg width="8" height="8" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="2,6 5,9 10,3" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }
 
+// ─── Arrow icon ──────────────────────────────────────────────
+function ArrowIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/>
+      <polyline points="12 19 5 12 12 5"/>
+    </svg>
+  )
+}
+
+// ─── Main component ──────────────────────────────────────────
 export default function Landing() {
   const { signIn, signUp } = useAuth()
 
-  const [mode, setMode]       = useState<Mode>('login')
-  const [name, setName]       = useState('')
-  const [email, setEmail]     = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError]     = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [emailVal, setEmailVal] = useState<{ message: string; type: string }>({ message: '', type: 'idle' })
+  const [mode, setMode]         = useState<Mode>('login')
+  const [name, setName]         = useState('')
+  const [email, setEmail]       = useState('')
+  const [pw, setPw]             = useState('')
+  const [error, setError]       = useState('')
+  const [success, setSuccess]   = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [showPwRules, setShowPwRules] = useState(false)
+  const [emailVal, setEmailVal] = useState({ message: '', type: 'idle' })
 
-  // Calculado direto — sem estado intermediário
-  const strength = password.length > 0 ? getStrength(password) : null
-  const showPasswordRules = mode === 'signup' && password.length > 0
+  const strength = pw.length > 0 ? pwStrength(pw) : null
 
   function switchMode(m: Mode) {
     setMode(m)
-    setError(''); setSuccess('')
-    setPassword('')
+    setError('')
+    setSuccess('')
+    setPw('')
     setEmailVal({ message: '', type: 'idle' })
+    setShowPwRules(false)
   }
 
-  function handleEmailChange(value: string) {
-    setEmail(value)
-    if (value.length > 4) setEmailVal(validateEmail(value))
-    else setEmailVal({ message: '', type: 'idle' })
+  function onEmailChange(v: string) {
+    setEmail(v)
+    if (v.length > 4) {
+      const result = validateEmail(v)
+      setEmailVal(result)
+    } else {
+      setEmailVal({ message: '', type: 'idle' })
+    }
   }
 
   async function handleSubmit() {
-    setError(''); setSuccess(''); setLoading(true)
+    setError('')
+    setSuccess('')
+    setLoading(true)
 
-    // Validar e-mail
     const emailCheck = validateEmail(email)
     if (!emailCheck.valid) {
       setEmailVal(emailCheck)
       setError('Informe um e-mail válido.')
-      setLoading(false); return
+      setLoading(false)
+      return
     }
 
     if (mode === 'login') {
-      const { error } = await signIn(email, password)
-      if (error) setError('E-mail ou senha incorretos.')
+      const { error: err } = await signIn(email, pw)
+      if (err) setError('E-mail ou senha incorretos.')
 
     } else if (mode === 'signup') {
-      if (!name.trim()) { setError('Informe seu nome.'); setLoading(false); return }
-
-      const failed = PASSWORD_RULES.filter(r => !r.test(password))
+      if (!name.trim()) {
+        setError('Informe seu nome.')
+        setLoading(false)
+        return
+      }
+      const failed = PW_RULES.filter(r => !r.test(pw))
       if (failed.length > 0) {
         setError(`Senha inválida: ${failed[0].label}.`)
-        setLoading(false); return
+        setLoading(false)
+        return
       }
-
-      const { error } = await signUp(email, password, name)
-      if (error) {
-        const msg = (error as { message?: string })?.message || ''
-        setError(
-          msg.includes('already registered') || msg.includes('already exists')
-            ? 'Este e-mail já está cadastrado. Tente fazer login.'
-            : 'Erro ao criar conta. Tente novamente.'
-        )
+      const { error: err } = await signUp(email, pw, name)
+      if (err) {
+        const msg = String((err as { message?: string })?.message ?? '')
+        if (msg.includes('already')) {
+          setError('E-mail já cadastrado. Tente fazer login.')
+        } else {
+          setError('Erro ao criar conta. Tente novamente.')
+        }
       } else {
-        setSuccess('Conta criada com sucesso! Faça login para entrar.')
-        setName(''); setPassword('')
+        setSuccess('Conta criada! Faça login para entrar.')
         setMode('login')
+        setName('')
+        setPw('')
       }
 
-    } else if (mode === 'forgot') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    } else {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
-      if (error) setError('Erro ao enviar e-mail. Verifique o endereço.')
-      else setSuccess('Link enviado! Verifique sua caixa de entrada e spam.')
+      if (err) {
+        setError('Erro ao enviar e-mail. Verifique o endereço.')
+      } else {
+        setSuccess('Link enviado! Verifique sua caixa de entrada.')
+      }
     }
 
     setLoading(false)
   }
 
+  // ─── Styles ────────────────────────────────────────────────
   const inp: React.CSSProperties = {
-    width: '100%', padding: '14px 18px', borderRadius: 14, fontSize: 15,
-    color: '#E9E4FF', background: '#1E1840',
-    border: '1px solid rgba(139,92,246,0.15)', outline: 'none',
-    fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
+    width: '100%',
+    height: 42,
+    padding: '0 12px',
+    borderRadius: 8,
+    border: '1px solid #E2E2E2',
+    background: '#FFFFFF',
+    outline: 'none',
+    fontSize: 14,
+    fontWeight: 400,
+    fontFamily: "'Inter',sans-serif",
+    color: '#0F0F0F',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+  }
+
+  function onFocusInp(e: React.FocusEvent<HTMLInputElement>) {
+    e.target.style.borderColor = '#7C3AED'
+    e.target.style.boxShadow   = '0 0 0 3px rgba(124,58,237,0.1)'
+  }
+
+  function onBlurInp(e: React.FocusEvent<HTMLInputElement>) {
+    e.target.style.borderColor = '#E2E2E2'
+    e.target.style.boxShadow   = 'none'
   }
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#0D0B1A', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{
+      minHeight: '100dvh',
+      background: '#F7F7F8',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px 20px',
+      fontFamily: "'Inter',sans-serif",
+    }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::placeholder { color: #4A4268 !important; }
+        html { -webkit-text-size-adjust: 100%; }
+        body { -webkit-font-smoothing: antialiased; }
         input:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0 100px #1E1840 inset !important;
-          -webkit-text-fill-color: #E9E4FF !important;
+          -webkit-box-shadow: 0 0 0 100px #FFFFFF inset !important;
+          -webkit-text-fill-color: #0F0F0F !important;
         }
-        @media (max-width: 480px) {
-          .land-card  { padding: 20px 16px !important; }
-          .land-title { font-size: 32px !important; }
-        }
+        ::placeholder { color: #ACACAC !important; font-family: 'Inter',sans-serif; }
+        @keyframes fIn  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pwIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
 
-      <div style={{ position: 'fixed', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '80vw', maxWidth: 500, height: '60vh', borderRadius: '50%', background: 'radial-gradient(circle, rgba(109,40,217,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ width: '100%', maxWidth: 400, animation: 'fIn 0.35s ease' }}>
 
-      <header style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1 }}>
-        <svg width="24" height="24" viewBox="0 0 56 56" fill="none">
-          <path d="M28 4L50 18V38L28 52L6 38V18Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinejoin="round"/>
-          <circle cx="28" cy="30" r="2.5" fill="rgba(255,255,255,0.5)"/>
-        </svg>
-        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 16, color: 'rgba(255,255,255,0.6)' }}>Claramente</span>
-      </header>
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 20px 40px', position: 'relative', zIndex: 1 }}>
-
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
-            <div style={{ position: 'absolute', inset: -20, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)' }} />
-            <CrystalLogo size={56} />
-          </div>
-          <h1 className="land-title" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 38, color: 'white', letterSpacing: -1, lineHeight: 1.1, marginBottom: 8 }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginBottom: 32 }}>
+          <Logo />
+          <span style={{ fontSize: 17, fontWeight: 700, color: '#0F0F0F', letterSpacing: -0.4 }}>
             Claramente
-          </h1>
-          <p style={{ fontSize: 14, color: '#6B6480', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
-            Seu espaço sagrado de introspecção e autoconhecimento
-          </p>
+          </span>
         </div>
 
-        <div className="land-card" style={{ width: '100%', maxWidth: 420, background: '#13102A', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' }}>
+        {/* Card */}
+        <div style={{ background: '#FFFFFF', border: '1px solid #E8E8E8', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
 
           {/* Tabs */}
           {mode !== 'forgot' && (
-            <div style={{ display: 'flex', background: '#0D0B1A', padding: '6px', gap: 4 }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid #E8E8E8', background: '#FAFAFA' }}>
               {(['login', 'signup'] as Mode[]).map(m => (
-                <button key={m} onClick={() => switchMode(m)} style={{
-                  flex: 1, padding: '11px 0', borderRadius: 14, border: 'none',
-                  cursor: 'pointer', fontSize: 14, fontWeight: 500,
-                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
-                  background: mode === m ? '#8B5CF6' : 'transparent',
-                  color: mode === m ? 'white' : '#6B6480',
-                  boxShadow: mode === m ? '0 4px 12px rgba(139,92,246,0.4)' : 'none',
-                }}>
+                <button
+                  key={m}
+                  onClick={() => switchMode(m)}
+                  style={{
+                    flex: 1,
+                    height: 44,
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: "'Inter',sans-serif",
+                    fontSize: 13,
+                    fontWeight: mode === m ? 600 : 400,
+                    color: mode === m ? '#7C3AED' : '#6B6B6B',
+                    background: mode === m ? '#FFFFFF' : 'transparent',
+                    borderBottom: mode === m ? '2px solid #7C3AED' : '2px solid transparent',
+                    transition: 'all 0.15s',
+                  }}
+                >
                   {m === 'login' ? 'Entrar' : 'Criar conta'}
                 </button>
               ))}
             </div>
           )}
 
-          <div style={{ padding: '24px 20px 20px' }}>
+          <div style={{ padding: '24px' }}>
 
+            {/* Forgot password header */}
             {mode === 'forgot' && (
               <div style={{ marginBottom: 20 }}>
-                <button onClick={() => switchMode('login')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6480', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, fontFamily: "'DM Sans', sans-serif" }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                  </svg>
+                <button
+                  onClick={() => switchMode('login')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#6B6B6B', fontSize: 13, fontFamily: "'Inter',sans-serif", marginBottom: 16, padding: 0 }}
+                >
+                  <ArrowIcon />
                   Voltar ao login
                 </button>
-                <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20, color: 'white', marginBottom: 6 }}>Recuperar senha</h2>
-                <p style={{ fontSize: 13, color: '#6B6480', lineHeight: 1.6 }}>Enviaremos um link para criar uma nova senha.</p>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0F0F0F', marginBottom: 4 }}>
+                  Recuperar senha
+                </h2>
+                <p style={{ fontSize: 13, fontWeight: 400, color: '#6B6B6B', lineHeight: 1.6 }}>
+                  Enviaremos um link para criar uma nova senha.
+                </p>
               </div>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-              {/* Nome */}
+              {/* Name — signup only */}
               {mode === 'signup' && (
                 <div>
-                  <label style={{ fontSize: 11, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase' }}>Nome</label>
-                  <input type="text" value={name} onChange={e => setName(e.target.value)}
-                    placeholder="Como você quer ser chamado?" style={inp}
-                    onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
-                    onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }}
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#0F0F0F', marginBottom: 6 }}>
+                    Nome
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Como você quer ser chamado?"
+                    style={inp}
+                    onFocus={onFocusInp}
+                    onBlur={onBlurInp}
                   />
                 </div>
               )}
 
-              {/* E-mail com validação em tempo real */}
+              {/* Email */}
               <div>
-                <label style={{ fontSize: 11, color: '#6B6480', display: 'block', marginBottom: 8, fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase' }}>E-mail</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#0F0F0F', marginBottom: 6 }}>
+                  E-mail
+                </label>
                 <div style={{ position: 'relative' }}>
                   <input
-                    type="email" value={email}
-                    onChange={e => handleEmailChange(e.target.value)}
-                    onBlur={() => email.length > 0 && setEmailVal(validateEmail(email))}
+                    type="email"
+                    value={email}
+                    onChange={e => onEmailChange(e.target.value)}
+                    onBlur={() => { if (email.length > 0) setEmailVal(validateEmail(email)) }}
                     placeholder="seu@email.com"
                     style={{
                       ...inp,
-                      paddingRight: emailVal.type !== 'idle' ? '44px' : '18px',
-                      borderColor: emailVal.type === 'valid'  ? 'rgba(34,197,94,0.5)'
-                        :           emailVal.type === 'error' ? 'rgba(239,68,68,0.5)'
-                        :           'rgba(139,92,246,0.15)',
+                      paddingRight: emailVal.type !== 'idle' ? 36 : 12,
+                      borderColor: emailVal.type === 'valid'
+                        ? '#22C55E'
+                        : emailVal.type === 'error'
+                        ? '#EF4444'
+                        : '#E2E2E2',
                     }}
-                    onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
-                    onBlurCapture={e => {
-                      e.target.style.background = '#1E1840'
-                      e.target.style.borderColor = emailVal.type === 'valid'  ? 'rgba(34,197,94,0.5)'
-                        :                           emailVal.type === 'error' ? 'rgba(239,68,68,0.5)'
-                        :                           'rgba(139,92,246,0.15)'
+                    onFocus={e => {
+                      e.target.style.borderColor = '#7C3AED'
+                      e.target.style.boxShadow   = '0 0 0 3px rgba(124,58,237,0.1)'
+                    }}
+                    onBlur={e => {
+                      e.target.style.boxShadow = 'none'
+                      e.target.style.borderColor = emailVal.type === 'valid'
+                        ? '#22C55E'
+                        : emailVal.type === 'error'
+                        ? '#EF4444'
+                        : '#E2E2E2'
                     }}
                   />
                   {emailVal.type !== 'idle' && (
-                    <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 15, fontWeight: 600, pointerEvents: 'none', color: emailVal.type === 'valid' ? '#86EFAC' : '#FCA5A5' }}>
+                    <span style={{
+                      position: 'absolute', right: 12, top: '50%',
+                      transform: 'translateY(-50%)', fontSize: 13,
+                      color: emailVal.type === 'valid' ? '#22C55E' : '#EF4444',
+                    }}>
                       {emailVal.type === 'valid' ? '✓' : '✗'}
-                    </div>
+                    </span>
                   )}
                 </div>
                 {emailVal.message && (
-                  <p style={{ fontSize: 11, marginTop: 5, color: emailVal.type === 'valid' ? '#86EFAC' : '#FCA5A5' }}>
+                  <p style={{ fontSize: 11, fontWeight: 400, color: emailVal.type === 'valid' ? '#22C55E' : '#EF4444', marginTop: 4 }}>
                     {emailVal.message}
                   </p>
                 )}
               </div>
 
-              {/* Senha */}
+              {/* Password */}
               {mode !== 'forgot' && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <label style={{ fontSize: 11, color: '#6B6480', fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase' }}>Senha</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#0F0F0F' }}>
+                      Senha
+                    </label>
                     {mode === 'login' && (
-                      <button onClick={() => switchMode('forgot')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#8B5CF6', fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>
-                        Esqueceu a senha?
+                      <button
+                        onClick={() => switchMode('forgot')}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#7C3AED', fontFamily: "'Inter',sans-serif" }}
+                      >
+                        Esqueceu?
                       </button>
                     )}
                   </div>
+
                   <input
-                    type="password" value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    type="password"
+                    value={pw}
+                    onChange={e => { setPw(e.target.value); if (mode === 'signup') setShowPwRules(true) }}
+                    onFocus={() => { if (mode === 'signup') setShowPwRules(true) }}
                     placeholder={mode === 'signup' ? 'Crie uma senha forte' : '••••••••'}
-                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}
                     style={inp}
-                    onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.6)'; e.target.style.background = '#231D4F' }}
-                    onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.15)'; e.target.style.background = '#1E1840' }}
+                    onFocusCapture={e => {
+                      e.target.style.borderColor = '#7C3AED'
+                      e.target.style.boxShadow   = '0 0 0 3px rgba(124,58,237,0.1)'
+                    }}
+                    onBlurCapture={e => {
+                      e.target.style.borderColor = '#E2E2E2'
+                      e.target.style.boxShadow   = 'none'
+                    }}
                   />
 
-                  {/* ✅ Regras aparecem automaticamente ao digitar */}
-                  {showPasswordRules && (
-                    <div style={{ marginTop: 10, background: 'rgba(139,92,246,0.06)', borderRadius: 12, padding: '12px 14px', border: '0.5px solid rgba(139,92,246,0.15)' }}>
+                  {/* Password rules */}
+                  {mode === 'signup' && showPwRules && pw.length > 0 && (
+                    <div style={{ marginTop: 10, padding: '12px', background: '#FAFAFA', borderRadius: 8, border: '1px solid #E8E8E8', animation: 'pwIn 0.2s ease' }}>
 
-                      {/* Barra de força */}
+                      {/* Strength bar */}
                       {strength && (
-                        <div style={{ marginBottom: 12 }}>
-                          <div style={{ display: 'flex', gap: 3, marginBottom: 5 }}>
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
                             {[1, 2, 3, 4].map(i => (
-                              <div key={i} style={{
-                                flex: 1, height: 4, borderRadius: 2,
-                                transition: 'background 0.3s',
-                                background: i <= strength.score ? strength.color : 'rgba(255,255,255,0.08)',
-                              }} />
+                              <div
+                                key={i}
+                                style={{
+                                  flex: 1, height: 3, borderRadius: 2,
+                                  background: i <= strength.score ? strength.color : '#E8E8E8',
+                                  transition: 'background 0.2s',
+                                }}
+                              />
                             ))}
                           </div>
-                          <span style={{ fontSize: 11, color: strength.color, fontWeight: 500 }}>
+                          <span style={{ fontSize: 11, fontWeight: 500, color: strength.color }}>
                             {strength.label}
                           </span>
                         </div>
                       )}
 
-                      {/* Checklist */}
-                      {PASSWORD_RULES.map(rule => {
-                        const ok = rule.test(password)
+                      {/* Rules checklist */}
+                      {PW_RULES.map(rule => {
+                        const ok = rule.test(pw)
                         return (
-                          <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <div key={rule.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                             <div style={{
-                              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                              background: ok ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.05)',
-                              border: `1.5px solid ${ok ? '#22C55E' : 'rgba(255,255,255,0.12)'}`,
+                              width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                              background: ok ? 'rgba(34,197,94,0.12)' : '#F4F4F5',
+                              border: `1px solid ${ok ? '#22C55E' : '#E2E2E2'}`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              transition: 'all 0.25s',
+                              transition: 'all 0.2s',
                             }}>
-                              {ok && (
-                                <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
-                                  <polyline points="2,6 5,9 10,3" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              )}
+                              {ok && <CheckIcon />}
                             </div>
-                            <span style={{ fontSize: 12, color: ok ? '#86EFAC' : '#6B6480', transition: 'color 0.25s' }}>
+                            <span style={{ fontSize: 11, fontWeight: 400, color: ok ? '#22C55E' : '#9B9B9B' }}>
                               {rule.label}
                             </span>
                           </div>
@@ -316,42 +429,53 @@ export default function Landing() {
                 </div>
               )}
 
-              {/* Feedback */}
+              {/* Error / Success feedback */}
               {error && (
-                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#FCA5A5', lineHeight: 1.5 }}>
+                <div style={{ padding: '10px 12px', borderRadius: 8, background: '#FFF5F5', border: '1px solid #FED7D7', fontSize: 13, fontWeight: 400, color: '#C53030' }}>
                   {error}
                 </div>
               )}
               {success && (
-                <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#86EFAC', lineHeight: 1.5 }}>
+                <div style={{ padding: '10px 12px', borderRadius: 8, background: '#F0FFF4', border: '1px solid #C6F6D5', fontSize: 13, fontWeight: 400, color: '#276749' }}>
                   {success}
                 </div>
               )}
 
-              <button onClick={handleSubmit} disabled={loading} style={{
-                width: '100%', padding: '15px', borderRadius: 14, border: 'none', marginTop: 4,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                background: loading ? '#2D1B69' : '#8B5CF6',
-                color: 'white', fontSize: 15, fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif", transition: 'all 0.2s',
-                boxShadow: loading ? 'none' : '0 8px 24px rgba(139,92,246,0.4)',
-              }}>
-                {loading ? 'Aguarde...'
-                  : mode === 'login'  ? 'Entrar'
-                  : mode === 'signup' ? 'Criar conta'
-                  : 'Enviar link de recuperação'}
+              {/* Submit button */}
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                style={{
+                  width: '100%', height: 42, borderRadius: 8, border: 'none', marginTop: 2,
+                  background: loading ? '#C4B5FD' : '#7C3AED',
+                  color: '#FFFFFF', fontSize: 14, fontWeight: 600,
+                  fontFamily: "'Inter',sans-serif",
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#6D28D9' }}
+                onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#7C3AED' }}
+              >
+                {loading
+                  ? 'Aguarde...'
+                  : mode === 'login'
+                  ? 'Entrar'
+                  : mode === 'signup'
+                  ? 'Criar conta'
+                  : 'Enviar link'}
               </button>
 
               {mode === 'signup' && (
-                <p style={{ fontSize: 11, color: '#4A4268', textAlign: 'center', lineHeight: 1.6 }}>
-                  Ao criar conta você concorda com o uso responsável dos seus dados conforme a LGPD.
+                <p style={{ fontSize: 11, fontWeight: 400, color: '#9B9B9B', textAlign: 'center', lineHeight: 1.6 }}>
+                  Ao criar conta você concorda com o uso dos seus dados conforme a LGPD.
                 </p>
               )}
+
             </div>
           </div>
         </div>
 
-        <p style={{ marginTop: 16, fontSize: 12, color: '#4A4268', textAlign: 'center' }}>
+        <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 400, color: '#9B9B9B', marginTop: 20 }}>
           Não substitui acompanhamento psicológico profissional.
         </p>
       </div>
