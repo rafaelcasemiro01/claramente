@@ -302,9 +302,6 @@ export default function Home() {
     <div style={{ height: '100dvh', display: 'flex', background: C.bg, fontFamily: "'Inter',sans-serif", overflow: 'hidden', opacity: mounted ? 1 : 0, transition: 'opacity 0.3s ease' }}>
       <style>{CSS}</style>
 
-      {/* Aura atmosférica azul — só no Home */}
-      <FooterAura />
-
       <div className="sb"><Sidebar /></div>
 
       {sidebarOpen && (
