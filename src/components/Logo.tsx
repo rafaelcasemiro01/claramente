@@ -1,25 +1,87 @@
-export function ClaramenteLogo({ size = 32, accent = '#2563EB' }: { size?: number; accent?: string }) {
-  const s = accent
-  const l = accent + 'BB'
+export function ClaramenteLogo({
+  size = 32,
+  accent = '#2563EB',
+}: {
+  size?: number
+  accent?: string
+}) {
+  const s = size
+  const small = s <= 28
+
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer glow ring */}
-      <circle cx="20" cy="20" r="19.5" stroke={s} strokeWidth="0.5" opacity="0.18"/>
-      {/* Main circle */}
-      <circle cx="20" cy="20" r="16" stroke={s} strokeWidth="1.5" fill={s + '0D'}/>
-      {/* Brain — left lobe */}
-      <path d="M 20 10 C 13 10 11 14 11 20" stroke={l} strokeWidth="1.8" strokeLinecap="round"/>
-      {/* Brain — right lobe */}
-      <path d="M 20 10 C 27 10 29 14 29 20" stroke={s} strokeWidth="1.8" strokeLinecap="round"/>
-      {/* Brain — center crease */}
-      <line x1="20" y1="10" x2="20" y2="19" stroke={s} strokeWidth="1" strokeLinecap="round" opacity="0.55"/>
-      {/* Chat bubble — arc */}
-      <path d="M 12 22 Q 12 30 20 30 Q 28 30 28 22" stroke={s} strokeWidth="1.6" strokeLinecap="round"/>
-      {/* Chat bubble — tail */}
-      <path d="M 17 30 Q 15 33 12 34" stroke={l} strokeWidth="1.5" strokeLinecap="round"/>
-      {/* Center node */}
-      <circle cx="20" cy="20" r="2.5" fill={s}/>
-      <circle cx="20" cy="20" r="1" fill="white" opacity="0.7"/>
+    <svg
+      width={s}
+      height={s}
+      viewBox="0 0 40 44"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* ── Cabeça (formato robótico arredondado, estilo C-3PO) ── */}
+      <rect
+        x="8" y="4" width="24" height="30" rx="7"
+        fill={`${accent}12`}
+        stroke={accent}
+        strokeWidth="1.5"
+      />
+
+      {/* ── Faixa viseira (traço horizontal C-3PO) ── */}
+      <rect x="8" y="14" width="24" height="12" rx="0" fill={`${accent}18`} />
+
+      {/* ── Olho esquerdo ── */}
+      <circle cx="15.5" cy="20" r="4.2" fill={`${accent}15`} stroke={accent} strokeWidth="1.2" />
+      <circle cx="15.5" cy="20" r="2"   fill={accent} />
+      <circle cx="14.4" cy="18.9" r="0.75" fill="white" opacity="0.65" />
+
+      {/* ── Olho direito ── */}
+      <circle cx="24.5" cy="20" r="4.2" fill={`${accent}15`} stroke={accent} strokeWidth="1.2" />
+      <circle cx="24.5" cy="20" r="2"   fill={accent} />
+      <circle cx="23.4" cy="18.9" r="0.75" fill="white" opacity="0.65" />
+
+      {/* ── Sorriso sutil ── */}
+      <path
+        d="M14 30 Q20 34.5 26 30"
+        stroke={accent}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+
+      {/* ── Linha central do nariz ── */}
+      <line
+        x1="20" y1="24" x2="20" y2="27.5"
+        stroke={accent}
+        strokeWidth="0.9"
+        strokeLinecap="round"
+        opacity="0.4"
+      />
+
+      {/* ── Detalhes laterais (painéis auriculares C-3PO) ── */}
+      {!small && (
+        <>
+          <rect x="4"  y="17" width="4" height="6" rx="1.5" fill={accent} opacity="0.18" />
+          <rect x="32" y="17" width="4" height="6" rx="1.5" fill={accent} opacity="0.18" />
+          {/* traço de separação lateral */}
+          <line x1="8"  y1="19" x2="8"  y2="21" stroke={accent} strokeWidth="0.7" opacity="0.35" />
+          <line x1="32" y1="19" x2="32" y2="21" stroke={accent} strokeWidth="0.7" opacity="0.35" />
+        </>
+      )}
+
+      {/* ── Antena/topo ── */}
+      {!small && (
+        <>
+          <circle cx="20" cy="4" r="1.3" fill={accent} opacity="0.45" />
+          <line x1="20" y1="2.5" x2="20" y2="4" stroke={accent} strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+        </>
+      )}
+
+      {/* ── Pescoço / base ── */}
+      <rect
+        x="15" y="34" width="10" height="6" rx="3"
+        fill={`${accent}10`}
+        stroke={accent}
+        strokeWidth="1.2"
+      />
+      {/* detalhes pescoço */}
+      <line x1="17" y1="37" x2="23" y2="37" stroke={accent} strokeWidth="0.8" strokeLinecap="round" opacity="0.4" />
     </svg>
   )
 }
