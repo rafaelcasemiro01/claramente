@@ -1,13 +1,22 @@
+// src/pages/Profile.tsx
+// ─────────────────────────────────────────────────────────────────────
+// Claramente — Perfil (re-themed)
+// Mantém toda a lógica original: upload + crop circular de avatar,
+// nome, senha (com regras + força), LGPD, exclusão de conta.
+// Apresentação migrada para terracotta & cream.
+// ─────────────────────────────────────────────────────────────────────
+
 import { useState, useEffect, useRef } from 'react'
+import type { CSSProperties, FocusEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { supabase } from '@/lib/supabase'
 import { UserNav } from '@/components/UserNav'
+import { useColors, fontStack } from '@/lib/theme'
 
-// ─── Regras de senha ──────────────────────────────────────────
 const RULES = [
-  { label: 'Mínimo 8 caracteres',          ok: (p: string) => p.length >= 8 },
+  { label: 'Mínimo 8 caracteres',           ok: (p: string) => p.length >= 8 },
   { label: 'Uma letra maiúscula',           ok: (p: string) => /[A-Z]/.test(p) },
   { label: 'Um número',                     ok: (p: string) => /[0-9]/.test(p) },
   { label: 'Um caractere especial (!@#$%)', ok: (p: string) => /[!@#$%^&*]/.test(p) },
@@ -16,25 +25,22 @@ const RULES = [
 function pwStrength(p: string) {
   const n = RULES.filter(r => r.ok(p)).length
   return [
-    { score: 0, label: '',            color: '#E2E8F0' },
-    { score: 1, label: 'Muito fraca', color: '#EF4444' },
-    { score: 2, label: 'Fraca',       color: '#F59E0B' },
-    { score: 3, label: 'Boa',         color: '#2563EB' },
-    { score: 4, label: 'Forte',       color: '#22C55E' },
+    { score: 0, label: '',           color: '#e6dbc6' },
+    { score: 1, label: 'Muito fraca', color: '#b8553f' },
+    { score: 2, label: 'Fraca',      color: '#d9a05b' },
+    { score: 3, label: 'Boa',        color: '#c4836a' },
+    { score: 4, label: 'Forte',      color: '#6b8a54' },
   ][n]
 }
 
-// ─── Ícones ───────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
       <circle cx="12" cy="12" r="3"/>
     </svg>
   ) : (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
       <line x1="1" y1="1" x2="23" y2="23"/>
     </svg>
@@ -43,109 +49,64 @@ function EyeIcon({ open }: { open: boolean }) {
 
 function CameraIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
       <circle cx="12" cy="13" r="4"/>
     </svg>
   )
 }
 
-function CheckSmall() {
-  return (
-    <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
-      <polyline points="2,6 5,9 10,3" stroke="#22C55E"
-        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
+type T = ReturnType<typeof useColors>
 
-// ─── Componente Section ───────────────────────────────────────
-function Section({ title, children, C }: {
-  title: string; children: React.ReactNode; C: Record<string, string>
-}) {
+function Section({ title, children, t }: { title: string; children: React.ReactNode; t: T }) {
   return (
     <div style={{
-      background: C.surface, border: `1px solid ${C.border}`,
-      borderRadius: 12, padding: 20, marginBottom: 12,
+      background: t.surface, border: `1px solid ${t.border}`,
+      borderRadius: 14, padding: 22, marginBottom: 12,
     }}>
       <p style={{
-        fontSize: 11, fontWeight: 600, color: C.textMuted,
-        textTransform: 'uppercase', letterSpacing: 0.7,
-        marginBottom: 18, fontFamily: "'Inter',sans-serif",
+        fontSize: 11, fontWeight: 600, color: t.textMuted,
+        textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 18,
       }}>
         {title}
       </p>
-      {children}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
     </div>
   )
 }
 
-// ══════════════════════════════════════════════════════════════
-// PROFILE
-// ══════════════════════════════════════════════════════════════
 export default function Profile() {
-  const navigate               = useNavigate()
-  const { profile, user, signOut } = useAuth()
-  const { isDark, toggle }     = useTheme()
-  const fileInputRef           = useRef<HTMLInputElement>(null)
-  const cropCanvasRef          = useRef<HTMLCanvasElement>(null)
-  const cropImgRef             = useRef<HTMLImageElement | null>(null)
-  const dragRef                = useRef({ dragging: false, startX: 0, startY: 0, ox: 0, oy: 0 })
+  const navigate = useNavigate()
+  const { profile, user } = useAuth()
+  const { isDark, toggle } = useTheme()
+  const t = useColors()
 
-  const ACCENT    = isDark ? '#60A5FA' : '#2563EB'
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const cropCanvasRef = useRef<HTMLCanvasElement>(null)
+  const cropImgRef    = useRef<HTMLImageElement | null>(null)
+  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, ox: 0, oy: 0 })
+
   const CROP_SIZE = 210
-
-  // ── Paleta de cores ────────────────────────────────────────
-  const C: Record<string, string> = isDark ? {
-    bg:          '#0F172A',
-    surface:     '#1E293B',
-    border:      '#334155',
-    text:        '#F1F5F9',
-    textSub:     '#94A3B8',
-    textMuted:   '#475569',
-    accent:      ACCENT,
-    accentBg:    'rgba(30,64,175,0.2)',
-    inputBg:     '#1E293B',
-    inputBorder: '#334155',
-    inner:       '#0F172A',
-  } : {
-    bg:          '#F0F9FF',
-    surface:     '#FFFFFF',
-    border:      '#E0F2FE',
-    text:        '#0F172A',
-    textSub:     '#374151',
-    textMuted:   '#64748B',
-    accent:      ACCENT,
-    accentBg:    '#EFF6FF',
-    inputBg:     '#FFFFFF',
-    inputBorder: '#E0F2FE',
-    inner:       '#F8FAFC',
-  }
 
   const firstName = profile?.name?.split(' ')[0] || 'você'
 
-  // ── Estado: foto de perfil ─────────────────────────────────
-  const [avatarUrl,   setAvatarUrl]   = useState<string>(
+  const [avatarUrl,  setAvatarUrl]  = useState<string>(
     (profile as unknown as { avatar_url?: string })?.avatar_url || ''
   )
-  const [uploading,   setUploading]   = useState(false)
-  const [uploadErr,   setUploadErr]   = useState('')
-  const [uploadDone,  setUploadDone]  = useState(false)
+  const [uploading,  setUploading]  = useState(false)
+  const [uploadErr,  setUploadErr]  = useState('')
+  const [uploadDone, setUploadDone] = useState(false)
 
-  // ── Estado: cropper ────────────────────────────────────────
   const [cropFile,  setCropFile]  = useState<File | null>(null)
   const [cropScale, setCropScale] = useState(1)
   const [cropX,     setCropX]     = useState(0)
   const [cropY,     setCropY]     = useState(0)
 
-  // ── Estado: nome ───────────────────────────────────────────
   const [name,       setName]       = useState(profile?.name || '')
   const [savingName, setSavingName] = useState(false)
   const [nameDone,   setNameDone]   = useState(false)
   const [nameErr,    setNameErr]    = useState('')
 
-  // ── Estado: senha ──────────────────────────────────────────
   const [newPw,    setNewPw]    = useState('')
   const [cfPw,     setCfPw]     = useState('')
   const [showPw,   setShowPw]   = useState(false)
@@ -155,7 +116,6 @@ export default function Profile() {
   const [pwErr,    setPwErr]    = useState('')
   const [pwFocus,  setPwFocus]  = useState(false)
 
-  // ── Estado: exclusão ───────────────────────────────────────
   const [showDel,  setShowDel]  = useState(false)
   const [delText,  setDelText]  = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -163,34 +123,35 @@ export default function Profile() {
 
   const st = pwStrength(newPw)
 
-  // ── Helpers ────────────────────────────────────────────────
-  const inp = (extra?: React.CSSProperties): React.CSSProperties => ({
-    width: '100%', height: 42, padding: '0 12px',
-    border: `1px solid ${C.inputBorder}`, borderRadius: 8,
-    fontSize: 14, fontFamily: "'Inter',sans-serif",
-    color: C.text, background: C.inputBg, outline: 'none',
-    transition: 'border-color 0.15s, box-shadow 0.15s', ...extra,
+  // ── input helpers ────────────────────────────────────────────────
+  const inp = (extra?: CSSProperties): CSSProperties => ({
+    width: '100%', height: 44, padding: '0 14px',
+    border: `1px solid ${t.border}`, borderRadius: 12,
+    fontSize: 14, fontFamily: fontStack,
+    color: t.text, background: isDark ? t.surface2 : '#fffcf6',
+    outline: 'none', transition: 'border-color 0.15s, box-shadow 0.15s',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)',
+    ...extra,
+  })
+  const onFocusInp = (e: FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = t.accent
+    e.currentTarget.style.boxShadow = `0 0 0 3px ${t.accent}22`
+  }
+  const onBlurInp = (e: FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = t.border
+    e.currentTarget.style.boxShadow = 'inset 0 1px 2px rgba(0,0,0,0.02)'
+  }
+
+  const btnPrimary = (disabled: boolean): CSSProperties => ({
+    alignSelf: 'flex-start', height: 40, padding: '0 22px', borderRadius: 12, border: 'none',
+    background: disabled ? t.accentSoft : t.accent,
+    color: disabled ? t.accent : '#fff',
+    fontSize: 13.5, fontWeight: 600, fontFamily: fontStack,
+    cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
+    boxShadow: disabled ? 'none' : `0 4px 14px ${t.accent}55, inset 0 1px 0 rgba(255,255,255,0.22)`,
   })
 
-  const onFocusInp = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.borderColor = ACCENT
-    e.currentTarget.style.boxShadow   = `0 0 0 3px ${ACCENT}18`
-  }
-  const onBlurInp = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.currentTarget.style.borderColor = C.inputBorder
-    e.currentTarget.style.boxShadow   = 'none'
-  }
-
-  const btnPrimary = (disabled: boolean): React.CSSProperties => ({
-    alignSelf: 'flex-start', height: 36, padding: '0 18px',
-    borderRadius: 8, border: 'none',
-    background: disabled ? C.accentBg : ACCENT,
-    color: disabled ? ACCENT : '#FFF',
-    fontSize: 13, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
-    fontFamily: "'Inter',sans-serif", transition: 'all 0.15s',
-  })
-
-  // ── Cropper: carrega imagem ────────────────────────────────
+  // ── cropper ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!cropFile) return
     const url = URL.createObjectURL(cropFile)
@@ -199,29 +160,25 @@ export default function Profile() {
       cropImgRef.current = img
       URL.revokeObjectURL(url)
       const minScale = Math.max(CROP_SIZE / img.width, CROP_SIZE / img.height)
-      setCropScale(minScale)
-      setCropX(0)
-      setCropY(0)
+      setCropScale(minScale); setCropX(0); setCropY(0)
     }
     img.src = url
   }, [cropFile])
 
-  // ── Cropper: redesenha ─────────────────────────────────────
   useEffect(() => { drawCrop() }, [cropScale, cropX, cropY, cropFile])
 
   function drawCrop() {
     const canvas = cropCanvasRef.current
-    const img    = cropImgRef.current
+    const img = cropImgRef.current
     if (!canvas || !img) return
     const ctx = canvas.getContext('2d')!
-    canvas.width  = CROP_SIZE
-    canvas.height = CROP_SIZE
+    canvas.width = CROP_SIZE; canvas.height = CROP_SIZE
     ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE)
     ctx.save()
     ctx.beginPath()
     ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2)
     ctx.clip()
-    const w = img.width  * cropScale
+    const w = img.width * cropScale
     const h = img.height * cropScale
     const x = (CROP_SIZE - w) / 2 + cropX
     const y = (CROP_SIZE - h) / 2 + cropY
@@ -229,7 +186,6 @@ export default function Profile() {
     ctx.restore()
   }
 
-  // ── Cropper: drag mouse ────────────────────────────────────
   function onCropDown(clientX: number, clientY: number) {
     dragRef.current = { dragging: true, startX: clientX, startY: clientY, ox: cropX, oy: cropY }
   }
@@ -240,18 +196,17 @@ export default function Profile() {
   }
   function onCropUp() { dragRef.current.dragging = false }
 
-  // ── Cropper: exporta blob ──────────────────────────────────
   async function getCroppedBlob(): Promise<Blob> {
-    const OUT    = 320
+    const OUT = 320
     const factor = OUT / CROP_SIZE
-    const out    = document.createElement('canvas')
+    const out = document.createElement('canvas')
     out.width = OUT; out.height = OUT
     const ctx = out.getContext('2d')!
     const img = cropImgRef.current!
     ctx.beginPath()
     ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2)
     ctx.clip()
-    const w = img.width  * cropScale * factor
+    const w = img.width * cropScale * factor
     const h = img.height * cropScale * factor
     const x = (OUT - w) / 2 + cropX * factor
     const y = (OUT - h) / 2 + cropY * factor
@@ -259,38 +214,32 @@ export default function Profile() {
     return new Promise(res => out.toBlob(b => res(b!), 'image/jpeg', 0.92))
   }
 
-  // ── Handlers ───────────────────────────────────────────────
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 5 * 1024 * 1024) { setUploadErr('Máximo 5 MB.'); return }
-    if (!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)) {
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
       setUploadErr('Use JPG, PNG, WebP ou GIF.'); return
     }
     setUploadErr('')
     cropImgRef.current = null
-    setCropX(0); setCropY(0)
-    setCropFile(file)
+    setCropX(0); setCropY(0); setCropFile(file)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   async function confirmCrop() {
     if (!user || !cropFile) return
     setUploading(true); setUploadErr('')
-    const blob  = await getCroppedBlob()
-    const path  = `${user.id}/avatar.jpg`
+    const blob = await getCroppedBlob()
+    const path = `${user.id}/avatar.jpg`
     const { error } = await supabase.storage
-      .from('avatars')
-      .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+      .from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
     if (error) { setUploadErr('Erro ao enviar. Verifique o bucket "avatars".'); setUploading(false); return }
     const { data } = supabase.storage.from('avatars').getPublicUrl(path)
     const url = `${data.publicUrl}?v=${Date.now()}`
     await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id)
-    setAvatarUrl(url)
-    setCropFile(null)
-    cropImgRef.current = null
-    setUploadDone(true)
-    setTimeout(() => setUploadDone(false), 3000)
+    setAvatarUrl(url); setCropFile(null); cropImgRef.current = null
+    setUploadDone(true); setTimeout(() => setUploadDone(false), 3000)
     setUploading(false)
   }
 
@@ -298,15 +247,13 @@ export default function Profile() {
     if (!user) return
     setUploading(true)
     await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id)
-    setAvatarUrl('')
-    setUploading(false)
+    setAvatarUrl(''); setUploading(false)
   }
 
   async function saveName() {
     if (!name.trim()) { setNameErr('O nome não pode ser vazio.'); return }
     setSavingName(true); setNameErr('')
-    const { error } = await supabase
-      .from('profiles').update({ name: name.trim() }).eq('id', user!.id)
+    const { error } = await supabase.from('profiles').update({ name: name.trim() }).eq('id', user!.id)
     if (error) setNameErr('Erro ao salvar.')
     else { setNameDone(true); setTimeout(() => setNameDone(false), 3000) }
     setSavingName(false)
@@ -342,403 +289,319 @@ export default function Profile() {
     }
   }
 
-  // ── CSS global ─────────────────────────────────────────────
   const CSS = `
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { -webkit-font-smoothing: antialiased; background: ${C.bg}; }
-    @keyframes fIn       { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes spin      { to{transform:rotate(360deg)} }
-    @keyframes footerBeam{ 0%{background-position:-200% 50%} 100%{background-position:200% 50%} }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: ${isDark ? '#334155' : '#BFDBFE'}; border-radius: 4px; }
+    body { -webkit-font-smoothing: antialiased; background: ${t.bg}; }
+    @keyframes fIn  { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+    @keyframes spinSoft { to { transform: rotate(360deg) } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: ${isDark ? 'rgba(196,131,106,0.22)' : 'rgba(160,101,73,0.18)'}; border-radius: 4px; }
     input:-webkit-autofill {
-      -webkit-box-shadow: 0 0 0 100px ${C.inputBg} inset !important;
-      -webkit-text-fill-color: ${C.text} !important;
+      -webkit-box-shadow: 0 0 0 100px ${isDark ? t.surface2 : '#fffcf6'} inset !important;
+      -webkit-text-fill-color: ${t.text} !important;
     }
     input[type=range] {
       -webkit-appearance: none; width: 100%; height: 4px;
-      background: ${isDark ? '#334155' : '#E0F2FE'}; border-radius: 2px; outline: none;
+      background: ${t.borderSoft}; border-radius: 2px; outline: none;
     }
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none; width: 18px; height: 18px;
-      border-radius: 50%; background: ${ACCENT}; cursor: pointer;
-      box-shadow: 0 0 4px ${ACCENT}40;
+      border-radius: 50%; background: ${t.accent}; cursor: pointer;
+      box-shadow: 0 0 4px ${t.accent}55;
     }
   `
 
-  // ══════════════════════════════════════════════════════════
-  // RENDER
-  // ══════════════════════════════════════════════════════════
+  const initial = (profile?.name || firstName).charAt(0).toUpperCase()
+
   return (
-    <div style={{ minHeight: '100dvh', background: C.bg, fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ minHeight: '100dvh', background: t.bg, fontFamily: fontStack }}>
       <style>{CSS}</style>
 
-      {/* ── Header ── */}
       <header style={{
-        background: C.surface, borderBottom: `1px solid ${C.border}`,
+        background: t.surface, borderBottom: `1px solid ${t.border}`,
         height: 56, padding: '0 24px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        {/* Esquerda: UserNav */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <UserNav isDark={isDark} />
-          <span style={{ fontSize: 15, fontWeight: 700, color: C.text, letterSpacing: -0.3 }}>
-            Perfil
-          </span>
+          <UserNav isDark={isDark}/>
+          <span style={{ fontSize: 15, fontWeight: 700, color: t.text, letterSpacing: -0.3 }}>Perfil</span>
         </div>
-
-        {/* Direita: toggle tema */}
         <button
           onClick={toggle}
-          style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s' }}
-          onMouseEnter={e => (e.currentTarget.style.background = C.accentBg)}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.12s',
+          }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.textSub} strokeWidth="2" strokeLinecap="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round">
             {isDark
-              ? <><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
+              ? <><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></>
               : <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>}
           </svg>
         </button>
       </header>
 
-      {/* ── Conteúdo ── */}
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '28px 20px 100px', animation: 'fIn 0.35s ease' }}>
 
-        {/* ── Foto de perfil ── */}
+        {/* Avatar card */}
         <div style={{
-          background: C.surface, border: `1px solid ${C.border}`,
-          borderRadius: 14, padding: 20, marginBottom: 12,
-          display: 'flex', alignItems: 'center', gap: 20,
+          background: t.surface, border: `1px solid ${t.border}`, borderRadius: 16,
+          padding: 22, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 20,
         }}>
-
-          {/* Avatar clicável */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
-              width: 72, height: 72, borderRadius: '50%',
-              overflow: 'hidden', background: C.accentBg,
-              border: `2px solid ${ACCENT}28`,
+              width: 76, height: 76, borderRadius: '50%',
+              overflow: 'hidden',
+              background: avatarUrl ? t.accentSoft : `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
+              border: `2px solid ${t.accentBorder}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 20px ${ACCENT}20`,
+              boxShadow: `0 0 24px ${t.accent}33`,
             }}>
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Foto de perfil"
+                <img src={avatarUrl} alt="Foto de perfil"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={() => setAvatarUrl('')}
-                />
+                  onError={() => setAvatarUrl('')}/>
               ) : (
-                <span style={{ fontSize: 26, fontWeight: 700, color: ACCENT, fontFamily: "'Inter',sans-serif" }}>
-                  {firstName.charAt(0).toUpperCase()}
-                </span>
+                <span style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{initial}</span>
               )}
             </div>
 
-            {/* Botão câmera */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               style={{
-                position: 'absolute', bottom: 0, right: 0,
-                width: 24, height: 24, borderRadius: '50%',
-                border: `2px solid ${C.surface}`,
-                background: ACCENT, color: '#FFF',
+                position: 'absolute', bottom: -2, right: -2, width: 26, height: 26, borderRadius: '50%',
+                border: `2px solid ${t.surface}`, background: t.accent, color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: uploading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.15s', boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                boxShadow: `0 2px 6px ${t.accent}55`, transition: 'all 0.15s',
               }}
-              onMouseEnter={e => { if (!uploading) e.currentTarget.style.filter = 'brightness(1.15)' }}
+              onMouseEnter={e => { if (!uploading) e.currentTarget.style.filter = 'brightness(1.12)' }}
               onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
             >
               {uploading
-                ? <div style={{ width: 10, height: 10, border: '1.5px solid rgba(255,255,255,0.3)', borderTopColor: '#FFF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                : <CameraIcon />
+                ? <div style={{ width: 10, height: 10, border: '1.5px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spinSoft 0.7s linear infinite' }}/>
+                : <CameraIcon/>
               }
             </button>
 
-            {/* Input oculto */}
-            <input
-              ref={fileInputRef}
-              type="file"
+            <input ref={fileInputRef} type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleAvatarChange}
-              style={{ display: 'none' }}
-            />
+              onChange={handleAvatarChange} style={{ display: 'none' }}/>
           </div>
 
-          {/* Info + botões */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 3px', letterSpacing: -0.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 17, fontWeight: 700, color: t.text, margin: '0 0 3px', letterSpacing: -0.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {profile?.name || firstName}
             </p>
-            <p style={{ fontSize: 12, color: C.textMuted, margin: '0 0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 12, color: t.textMuted, margin: '0 0 12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.email}
             </p>
-
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                style={{ height: 30, padding: '0 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.textSub, fontSize: 12, fontWeight: 500, cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all 0.12s' }}
-                onMouseEnter={e => { if (!uploading) { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = ACCENT } }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSub }}
-              >
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                style={ghostBtn(t)}>
                 {uploading ? 'Enviando...' : avatarUrl ? 'Trocar foto' : 'Adicionar foto'}
               </button>
-
               {avatarUrl && !uploading && (
-                <button
-                  onClick={removeAvatar}
-                  style={{ height: 30, padding: '0 12px', borderRadius: 7, border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#EF4444', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all 0.12s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  Remover
-                </button>
+                <button onClick={removeAvatar} style={dangerGhostBtn(t)}>Remover</button>
               )}
             </div>
-
-            {uploadErr  && <p style={{ fontSize: 11, color: '#EF4444', marginTop: 8 }}>{uploadErr}</p>}
-            {uploadDone && <p style={{ fontSize: 11, color: '#22C55E', marginTop: 8 }}>✓ Foto atualizada!</p>}
-            <p style={{ fontSize: 10, color: C.textMuted, marginTop: 6 }}>JPG, PNG, WebP ou GIF · máx. 5 MB</p>
+            {uploadErr  && <p style={{ fontSize: 11, color: t.danger, marginTop: 8 }}>{uploadErr}</p>}
+            {uploadDone && <p style={{ fontSize: 11, color: t.success, marginTop: 8 }}>✓ Foto atualizada!</p>}
+            <p style={{ fontSize: 10, color: t.textMuted, marginTop: 6 }}>JPG, PNG, WebP ou GIF · máx. 5 MB</p>
           </div>
         </div>
 
-        {/* ── Informações pessoais ── */}
-        <Section title="Informações pessoais" C={C}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 6 }}>Nome</label>
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') saveName() }}
-                style={inp()}
-                onFocus={onFocusInp}
-                onBlur={onBlurInp}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 6 }}>E-mail</label>
-              <input
-                value={user?.email || ''}
-                disabled
-                style={inp({ background: C.inner, color: C.textMuted, cursor: 'not-allowed' })}
-              />
-              <p style={{ fontSize: 11, color: C.textMuted, marginTop: 4 }}>O e-mail não pode ser alterado.</p>
-            </div>
-
-            {nameErr  && <p style={{ fontSize: 12, color: '#EF4444' }}>{nameErr}</p>}
-            {nameDone && <p style={{ fontSize: 12, color: '#22C55E' }}>✓ Nome salvo com sucesso!</p>}
-
-            <button
-              onClick={saveName}
-              disabled={savingName}
-              style={btnPrimary(savingName)}
-              onMouseEnter={e => { if (!savingName) e.currentTarget.style.filter = 'brightness(1.1)' }}
-              onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
-            >
-              {savingName ? 'Salvando...' : 'Salvar alterações'}
-            </button>
+        {/* Personal info */}
+        <Section title="Informações pessoais" t={t}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Nome</label>
+            <input value={name} onChange={e => setName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveName() }}
+              style={inp()} onFocus={onFocusInp} onBlur={onBlurInp}/>
           </div>
-        </Section>
-
-        {/* ── Alterar senha ── */}
-        <Section title="Alterar senha" C={C}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-            {/* Nova senha */}
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 6 }}>Nova senha</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={newPw}
-                  onChange={e => setNewPw(e.target.value)}
-                  placeholder="Crie uma senha forte"
-                  style={inp({ paddingRight: 42 })}
-                  onFocus={e => { onFocusInp(e); setPwFocus(true) }}
-                  onBlur={onBlurInp}
-                />
-                <button
-                  onClick={() => setShowPw(p => !p)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, display: 'flex', padding: 4, borderRadius: 4 }}
-                >
-                  <EyeIcon open={showPw} />
-                </button>
-              </div>
-
-              {/* Barra de força */}
-              {pwFocus && newPw.length > 0 && (
-                <div style={{ marginTop: 8, padding: 12, background: C.inner, borderRadius: 8, border: `1px solid ${C.border}` }}>
-                  <div style={{ display: 'flex', gap: 3, marginBottom: 6 }}>
-                    {[1,2,3,4].map(i => (
-                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= st.score ? st.color : (isDark ? '#334155' : '#E2E8F0'), transition: 'background 0.2s' }} />
-                    ))}
-                  </div>
-                  {st.label && <p style={{ fontSize: 11, fontWeight: 500, color: st.color, marginBottom: 8 }}>{st.label}</p>}
-                  {RULES.map(r => {
-                    const ok = r.ok(newPw)
-                    return (
-                      <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                        <div style={{ width: 15, height: 15, borderRadius: '50%', flexShrink: 0, background: ok ? 'rgba(34,197,94,0.15)' : (isDark ? '#1E293B' : '#F4F4F5'), border: `1px solid ${ok ? '#22C55E' : C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {ok && <CheckSmall />}
-                        </div>
-                        <span style={{ fontSize: 11, color: ok ? '#22C55E' : C.textMuted }}>{r.label}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Confirmar senha */}
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 6 }}>Confirmar nova senha</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showCf ? 'text' : 'password'}
-                  value={cfPw}
-                  onChange={e => setCfPw(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') savePw() }}
-                  placeholder="Repita a nova senha"
-                  style={inp({
-                    paddingRight: 42,
-                    borderColor: cfPw.length > 3 ? (cfPw === newPw ? '#22C55E' : '#EF4444') : C.inputBorder,
-                  })}
-                  onFocus={onFocusInp}
-                  onBlur={onBlurInp}
-                />
-                <button
-                  onClick={() => setShowCf(p => !p)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.textMuted, display: 'flex', padding: 4, borderRadius: 4 }}
-                >
-                  <EyeIcon open={showCf} />
-                </button>
-              </div>
-              {cfPw.length > 3 && (
-                <p style={{ fontSize: 11, marginTop: 4, color: cfPw === newPw ? '#22C55E' : '#EF4444' }}>
-                  {cfPw === newPw ? '✓ Senhas coincidem' : '✗ Senhas não coincidem'}
-                </p>
-              )}
-            </div>
-
-            {pwErr  && <p style={{ fontSize: 12, color: '#EF4444' }}>{pwErr}</p>}
-            {pwDone && <p style={{ fontSize: 12, color: '#22C55E' }}>✓ Senha alterada com sucesso!</p>}
-
-            <button
-              onClick={savePw}
-              disabled={savingPw}
-              style={btnPrimary(savingPw)}
-              onMouseEnter={e => { if (!savingPw) e.currentTarget.style.filter = 'brightness(1.1)' }}
-              onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
-            >
-              {savingPw ? 'Salvando...' : 'Alterar senha'}
-            </button>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>E-mail</label>
+            <input value={user?.email || ''} disabled
+              style={inp({ background: isDark ? t.surface3 : t.surface2, color: t.textMuted, cursor: 'not-allowed' })}/>
+            <p style={{ fontSize: 11, color: t.textMuted, marginTop: 4 }}>O e-mail não pode ser alterado.</p>
           </div>
-        </Section>
-
-        {/* ── LGPD ── */}
-        <Section title="Dados e privacidade (LGPD)" C={C}>
-          <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.7, marginBottom: 14 }}>
-            Conforme a LGPD, você tem direito ao esquecimento. Seus dados podem ser removidos permanentemente a qualquer momento.
-          </p>
-          <button
-            onClick={() => navigate('/relatorios')}
-            style={{ height: 34, padding: '0 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textSub, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all 0.12s' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.color = ACCENT }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textSub }}
-          >
-            Ver meus relatórios
+          {nameErr  && <p style={{ fontSize: 12, color: t.danger }}>{nameErr}</p>}
+          {nameDone && <p style={{ fontSize: 12, color: t.success }}>✓ Nome salvo com sucesso!</p>}
+          <button onClick={saveName} disabled={savingName}
+            style={btnPrimary(savingName)}
+            onMouseEnter={e => { if (!savingName) e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}>
+            {savingName ? 'Salvando...' : 'Salvar alterações'}
           </button>
         </Section>
 
-        {/* ── Zona de perigo ── */}
-        <div style={{ background: isDark ? 'rgba(239,68,68,0.05)' : '#FFF5F5', border: `1px solid ${isDark ? 'rgba(239,68,68,0.2)' : '#FED7D7'}`, borderRadius: 12, padding: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 14, fontFamily: "'Inter',sans-serif" }}>
-            Zona de perigo
+        {/* Password */}
+        <Section title="Alterar senha" t={t}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Nova senha</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showPw ? 'text' : 'password'} value={newPw}
+                onChange={e => setNewPw(e.target.value)}
+                placeholder="Crie uma senha forte"
+                style={inp({ paddingRight: 42 })}
+                onFocus={e => { onFocusInp(e); setPwFocus(true) }}
+                onBlur={onBlurInp}/>
+              <button onClick={() => setShowPw(p => !p)} style={eyeBtn(t)}><EyeIcon open={showPw}/></button>
+            </div>
+
+            {pwFocus && newPw.length > 0 && (
+              <div style={{
+                marginTop: 10, padding: 12, borderRadius: 10,
+                background: isDark ? t.surface2 : '#fbf6ec', border: `1px solid ${t.borderSoft}`,
+              }}>
+                <div style={{ display: 'flex', gap: 3, marginBottom: 6 }}>
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} style={{
+                      flex: 1, height: 3, borderRadius: 2,
+                      background: i <= st.score ? st.color : (isDark ? t.border : '#e7dac4'),
+                      transition: 'background 0.2s',
+                    }}/>
+                  ))}
+                </div>
+                {st.label && <p style={{ fontSize: 11, fontWeight: 500, color: st.color, marginBottom: 8 }}>{st.label}</p>}
+                {RULES.map(r => {
+                  const ok = r.ok(newPw)
+                  return (
+                    <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                      <div style={{
+                        width: 15, height: 15, borderRadius: '50%', flexShrink: 0,
+                        background: ok ? 'rgba(107,138,84,0.15)' : (isDark ? t.surface3 : '#f4ede0'),
+                        border: `1px solid ${ok ? t.success : t.border}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {ok && (
+                          <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                            <polyline points="2,6 5,9 10,3" stroke={t.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 11, color: ok ? t.success : t.textMuted }}>{r.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Confirmar nova senha</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showCf ? 'text' : 'password'} value={cfPw}
+                onChange={e => setCfPw(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') savePw() }}
+                placeholder="Repita a nova senha"
+                style={inp({
+                  paddingRight: 42,
+                  borderColor: cfPw.length > 3 ? (cfPw === newPw ? t.success : t.danger) : t.border,
+                })}
+                onFocus={onFocusInp} onBlur={onBlurInp}/>
+              <button onClick={() => setShowCf(p => !p)} style={eyeBtn(t)}><EyeIcon open={showCf}/></button>
+            </div>
+            {cfPw.length > 3 && (
+              <p style={{ fontSize: 11, marginTop: 4, color: cfPw === newPw ? t.success : t.danger }}>
+                {cfPw === newPw ? '✓ Senhas coincidem' : '✗ Senhas não coincidem'}
+              </p>
+            )}
+          </div>
+
+          {pwErr  && <p style={{ fontSize: 12, color: t.danger }}>{pwErr}</p>}
+          {pwDone && <p style={{ fontSize: 12, color: t.success }}>✓ Senha alterada com sucesso!</p>}
+
+          <button onClick={savePw} disabled={savingPw}
+            style={btnPrimary(savingPw)}
+            onMouseEnter={e => { if (!savingPw) e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}>
+            {savingPw ? 'Salvando...' : 'Alterar senha'}
+          </button>
+        </Section>
+
+        {/* LGPD */}
+        <Section title="Dados e privacidade (LGPD)" t={t}>
+          <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7 }}>
+            Conforme a LGPD, você tem direito ao esquecimento. Seus dados podem ser removidos permanentemente a qualquer momento.
           </p>
+          <button onClick={() => navigate('/relatorios')} style={ghostBtn(t)}>Ver meus relatórios</button>
+        </Section>
+
+        {/* Danger zone */}
+        <div style={{
+          background: isDark ? 'rgba(217,117,96,0.06)' : 'rgba(184,85,63,0.04)',
+          border: `1px solid ${isDark ? 'rgba(217,117,96,0.25)' : 'rgba(184,85,63,0.2)'}`,
+          borderRadius: 14, padding: 22,
+        }}>
+          <p style={{
+            fontSize: 11, fontWeight: 600, color: t.danger,
+            textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 14,
+          }}>Zona de perigo</p>
 
           {!showDel ? (
             <>
-              <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.7, marginBottom: 14 }}>
-                Excluir sua conta remove <strong style={{ color: C.text }}>permanentemente</strong> todas as conversas, relatórios e seu acesso. Esta ação não pode ser desfeita.
+              <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.7, marginBottom: 14 }}>
+                Excluir sua conta remove <strong style={{ color: t.text }}>permanentemente</strong> todas as conversas, relatórios e seu acesso. Esta ação não pode ser desfeita.
               </p>
-              <button
-                onClick={() => setShowDel(true)}
-                style={{ height: 36, padding: '0 14px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)', background: 'transparent', color: '#EF4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all 0.12s' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.07)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
+              <button onClick={() => setShowDel(true)} style={{
+                height: 36, padding: '0 14px', borderRadius: 10,
+                border: `1px solid ${t.danger}66`, background: 'transparent', color: t.danger,
+                fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: fontStack,
+                transition: 'all 0.12s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = `${t.danger}10`)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                 Excluir minha conta
               </button>
             </>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <p style={{ fontSize: 13, color: '#EF4444', fontWeight: 500, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: t.danger, fontWeight: 500, lineHeight: 1.6 }}>
                 Digite <strong>excluir</strong> para confirmar
-                <br /><span style={{ fontSize: 11, color: C.textMuted, fontWeight: 400 }}>(qualquer capitalização é aceita)</span>
+                <br/><span style={{ fontSize: 11, color: t.textMuted, fontWeight: 400 }}>(qualquer capitalização é aceita)</span>
               </p>
-
               <input
                 value={delText}
                 onChange={e => setDelText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') deleteAccount() }}
-                placeholder="excluir"
-                autoComplete="off"
-                style={{
-                  ...inp(),
+                placeholder="excluir" autoComplete="off"
+                style={inp({
                   borderColor: delText.length > 0
-                    ? (delText.trim().toUpperCase() === 'EXCLUIR' ? '#22C55E' : 'rgba(239,68,68,0.5)')
-                    : 'rgba(239,68,68,0.4)',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = '#EF4444'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.12)' }}
-                onBlur={e => {
-                  e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.borderColor = delText.length > 0
-                    ? (delText.trim().toUpperCase() === 'EXCLUIR' ? '#22C55E' : 'rgba(239,68,68,0.5)')
-                    : 'rgba(239,68,68,0.4)'
-                }}
-              />
-
+                    ? (delText.trim().toUpperCase() === 'EXCLUIR' ? t.success : `${t.danger}80`)
+                    : `${t.danger}40`,
+                })}
+                onFocus={e => { e.currentTarget.style.borderColor = t.danger; e.currentTarget.style.boxShadow = `0 0 0 3px ${t.danger}22` }}
+                onBlur={onBlurInp}/>
               {delText.length > 0 && delText.trim().toUpperCase() === 'EXCLUIR' && (
-                <p style={{ fontSize: 11, color: '#22C55E', marginTop: -6 }}>✓ Confirmação válida</p>
+                <p style={{ fontSize: 11, color: t.success, marginTop: -6 }}>✓ Confirmação válida</p>
               )}
-
               {delErr && (
-                <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, color: '#EF4444' }}>
-                  {delErr}
-                </div>
+                <div style={{
+                  padding: '10px 12px', borderRadius: 10,
+                  background: `${t.danger}10`, border: `1px solid ${t.danger}33`,
+                  fontSize: 13, color: t.danger,
+                }}>{delErr}</div>
               )}
-
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => { setShowDel(false); setDelText(''); setDelErr('') }}
-                  style={{ height: 36, padding: '0 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textSub, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = C.accentBg)}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
+                <button onClick={() => { setShowDel(false); setDelText(''); setDelErr('') }} style={ghostBtn(t)}>
                   Cancelar
                 </button>
                 <button
                   onClick={deleteAccount}
                   disabled={delText.trim().toUpperCase() !== 'EXCLUIR' || deleting}
                   style={{
-                    height: 36, padding: '0 16px', borderRadius: 8, border: 'none',
-                    background: (delText.trim().toUpperCase() === 'EXCLUIR' && !deleting) ? '#EF4444' : 'rgba(239,68,68,0.15)',
-                    color: (delText.trim().toUpperCase() === 'EXCLUIR' && !deleting) ? '#FFF' : '#EF4444',
-                    fontSize: 13, fontWeight: 600,
+                    height: 36, padding: '0 16px', borderRadius: 10, border: 'none',
+                    background: (delText.trim().toUpperCase() === 'EXCLUIR' && !deleting) ? t.danger : `${t.danger}30`,
+                    color: (delText.trim().toUpperCase() === 'EXCLUIR' && !deleting) ? '#fff' : t.danger,
+                    fontSize: 13, fontWeight: 600, fontFamily: fontStack,
                     cursor: (delText.trim().toUpperCase() === 'EXCLUIR' && !deleting) ? 'pointer' : 'not-allowed',
-                    fontFamily: "'Inter',sans-serif", transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={e => { if (delText.trim().toUpperCase() === 'EXCLUIR' && !deleting) e.currentTarget.style.filter = 'brightness(1.1)' }}
-                  onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
-                >
+                    transition: 'all 0.15s',
+                  }}>
                   {deleting ? 'Excluindo...' : 'Confirmar exclusão permanente'}
                 </button>
               </div>
@@ -746,96 +609,104 @@ export default function Profile() {
           )}
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 11, color: C.textMuted, marginTop: 24 }}>
+        <p style={{ textAlign: 'center', fontSize: 11, color: t.textMuted, marginTop: 24 }}>
           Claramente · Fatec Ourinhos · TG 2026
         </p>
       </div>
 
-      {/* ── Modal: ajuste de foto ── */}
+      {/* Cropper modal */}
       {cropFile && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.78)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', padding: 20 }}>
-          <div style={{ background: C.surface, borderRadius: 18, padding: 24, maxWidth: 300, width: '100%', boxShadow: '0 28px 72px rgba(0,0,0,0.5)' }}>
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 300,
+          background: 'rgba(26,22,18,0.78)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <div style={{
+            background: t.surface, borderRadius: 20, padding: 24, maxWidth: 320, width: '100%',
+            boxShadow: '0 28px 72px rgba(0,0,0,0.5)',
+          }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: t.text, marginBottom: 4 }}>Ajustar foto</p>
+            <p style={{ fontSize: 12, color: t.textMuted, marginBottom: 18 }}>Arraste para reposicionar · deslize para zoom</p>
 
-            <p style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4, fontFamily: "'Inter',sans-serif" }}>
-              Ajustar foto
-            </p>
-            <p style={{ fontSize: 12, color: C.textMuted, marginBottom: 18, fontFamily: "'Inter',sans-serif" }}>
-              Arraste para reposicionar · deslize para zoom
-            </p>
-
-            {/* Preview circular com canvas */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
               <canvas
                 ref={cropCanvasRef}
-                width={CROP_SIZE}
-                height={CROP_SIZE}
+                width={CROP_SIZE} height={CROP_SIZE}
                 style={{
                   width: CROP_SIZE, height: CROP_SIZE,
                   borderRadius: '50%', cursor: 'grab',
-                  border: `3px solid ${ACCENT}55`,
+                  border: `3px solid ${t.accent}66`,
                   maxWidth: '100%', touchAction: 'none',
-                  boxShadow: `0 0 24px ${ACCENT}25`,
+                  boxShadow: `0 0 28px ${t.accent}33`,
                 }}
                 onMouseDown={e => onCropDown(e.clientX, e.clientY)}
                 onMouseMove={e => onCropMove(e.clientX, e.clientY)}
                 onMouseUp={onCropUp}
                 onMouseLeave={onCropUp}
                 onTouchStart={e => { e.preventDefault(); const t = e.touches[0]; onCropDown(t.clientX, t.clientY) }}
-                onTouchMove={e  => { e.preventDefault(); const t = e.touches[0]; onCropMove(t.clientX, t.clientY) }}
-                onTouchEnd={onCropUp}
-              />
+                onTouchMove={e => { e.preventDefault(); const t = e.touches[0]; onCropMove(t.clientX, t.clientY) }}
+                onTouchEnd={onCropUp}/>
             </div>
 
-            {/* Slider de zoom */}
             <div style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 500, color: C.textSub, fontFamily: "'Inter',sans-serif" }}>
-                  Zoom
-                </span>
-                <span style={{ fontSize: 12, color: C.textMuted, fontFamily: "'Inter',sans-serif" }}>
-                  {Math.round(cropScale * 100)}%
-                </span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: t.textSub }}>Zoom</span>
+                <span style={{ fontSize: 12, color: t.textMuted }}>{Math.round(cropScale * 100)}%</span>
               </div>
-              <input
-                type="range"
-                min={0.3}
-                max={5}
-                step={0.01}
-                value={cropScale}
-                onChange={e => setCropScale(Number(e.target.value))}
-              />
+              <input type="range" min={0.3} max={5} step={0.01} value={cropScale}
+                onChange={e => setCropScale(Number(e.target.value))}/>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: C.textMuted }}>Menos zoom</span>
-                <span style={{ fontSize: 10, color: C.textMuted }}>Mais zoom</span>
+                <span style={{ fontSize: 10, color: t.textMuted }}>Menos zoom</span>
+                <span style={{ fontSize: 10, color: t.textMuted }}>Mais zoom</span>
               </div>
             </div>
 
-            {/* Botões */}
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={() => { setCropFile(null); cropImgRef.current = null }}
-                style={{ flex: 1, height: 40, borderRadius: 9, border: `1px solid ${C.border}`, background: 'transparent', color: C.textSub, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all 0.12s' }}
-                onMouseEnter={e => (e.currentTarget.style.background = C.accentBg)}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                Cancelar
-              </button>
+                style={{
+                  flex: 1, height: 42, borderRadius: 12,
+                  border: `1px solid ${t.border}`, background: 'transparent',
+                  color: t.textSub, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: fontStack,
+                }}>Cancelar</button>
               <button
-                onClick={confirmCrop}
-                disabled={uploading}
-                style={{ flex: 1, height: 40, borderRadius: 9, border: 'none', background: uploading ? C.accentBg : ACCENT, color: uploading ? ACCENT : '#FFF', fontSize: 13, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: "'Inter',sans-serif", transition: 'all 0.15s' }}
-                onMouseEnter={e => { if (!uploading) e.currentTarget.style.filter = 'brightness(1.1)' }}
-                onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
-              >
+                onClick={confirmCrop} disabled={uploading}
+                style={{
+                  flex: 1, height: 42, borderRadius: 12, border: 'none',
+                  background: uploading ? t.accentSoft : t.accent,
+                  color: uploading ? t.accent : '#fff',
+                  fontSize: 13, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: fontStack,
+                  boxShadow: uploading ? 'none' : `0 4px 14px ${t.accent}55`,
+                }}>
                 {uploading ? 'Salvando...' : 'Confirmar'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Footer beam */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 2, zIndex: 999, pointerEvents: 'none', background: 'linear-gradient(90deg,transparent 0%,rgba(59,130,246,0) 5%,rgba(96,165,250,0.9) 30%,rgba(147,197,253,1) 50%,rgba(96,165,250,0.9) 70%,rgba(59,130,246,0) 95%,transparent 100%)', backgroundSize: '200% 100%', animation: 'footerBeam 4s linear infinite' }} />
     </div>
   )
+}
+
+function ghostBtn(t: T): CSSProperties {
+  return {
+    height: 32, padding: '0 14px', borderRadius: 10,
+    border: `1px solid ${t.border}`, background: 'transparent',
+    color: t.textSub, fontSize: 12.5, fontWeight: 500, cursor: 'pointer', fontFamily: fontStack,
+    transition: 'all 0.12s',
+  }
+}
+function dangerGhostBtn(t: T): CSSProperties {
+  return {
+    height: 32, padding: '0 14px', borderRadius: 10,
+    border: `1px solid ${t.danger}40`, background: 'transparent',
+    color: t.danger, fontSize: 12.5, fontWeight: 500, cursor: 'pointer', fontFamily: fontStack,
+  }
+}
+function eyeBtn(t: T): CSSProperties {
+  return {
+    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: t.textMuted, display: 'flex', padding: 4, borderRadius: 4,
+  }
 }
