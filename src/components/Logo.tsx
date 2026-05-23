@@ -1,131 +1,145 @@
-export function ClaramenteLogo({
-  size = 32,
-  accent = '#2563EB',
-}: {
-  size?: number
-  accent?: string
-}) {
-  const isLightAccent = accent === '#2563EB'
+// src/components/Logo.tsx
+// The new Claramente mascot — a warm, friendly companion droid.
+// Props are backwards-compatible:
+//   <ClaramenteLogo size={28} />                    // works
+//   <ClaramenteLogo size={28} accent={anyColor} />  // accent accepted but ignored
+//   <ClaramenteLogo size={28} mode="dark" />        // new — controls inner palette
+//   <ClaramenteLogo size={120} breathing />         // new — subtle pulse animation
 
-  const c = isLightAccent ? {
-    headDark:  '#1E3A8A',
-    headBase:  '#1E40AF',
-    headMid:   '#2563EB',
-    visor:     '#0C1445',
-    eyeBg:     '#060D2E',
-    eyeBase:   '#1D4ED8',
-    eyeMid:    '#3B82F6',
-    eyeLight:  '#60A5FA',
-    eyeGlow:   '#93C5FD',
-    detail:    '#3B82F6',
-    detailLow: '#1D4ED8',
-    neck:      '#1E3A8A',
-  } : {
-    headDark:  '#1E40AF',
-    headBase:  '#2563EB',
-    headMid:   '#3B82F6',
-    visor:     '#0F172A',
-    eyeBg:     '#0F172A',
-    eyeBase:   '#2563EB',
-    eyeMid:    '#3B82F6',
-    eyeLight:  '#60A5FA',
-    eyeGlow:   '#BFDBFE',
-    detail:    '#60A5FA',
-    detailLow: '#3B82F6',
-    neck:      '#1E40AF',
-  }
+import { useId } from 'react'
+
+type Props = {
+  size?: number
+  /** Backwards compat — accepted but ignored. */
+  accent?: string
+  /** Controls the warm palette. Defaults to 'light'. */
+  mode?: 'light' | 'dark'
+  /** Enables a subtle eye-highlight + antenna pulse. Use on landing / large sizes. */
+  breathing?: boolean
+}
+
+export function ClaramenteLogo({ size = 32, mode = 'light', breathing = false }: Props) {
+  const reactUid = useId()
+  const uid = reactUid.replace(/:/g, '')
+  const headGradId   = `friendHeadGrad-${uid}`
+  const eyeGradId    = `friendEyeGrad-${uid}`
+  const innerLightId = `friendInner-${uid}`
+
+  const c =
+    mode === 'dark'
+      ? {
+          headLight:   '#d49380',
+          headMid:     '#b87560',
+          headDeep:    '#8a5640',
+          headRim:     '#5a3a2b',
+          ear:         '#9c6549',
+          earDetail:   'rgba(240,212,192,0.5)',
+          eyeBg:       '#1a0e08',
+          eyeRing:     '#3a1f14',
+          eyeGlow:     '#f4d4c0',
+          eyeCore:     '#e0a890',
+          eyeCenter:   '#c4836a',
+          highlight:   '#fff8ee',
+          cheek:       'rgba(217,117,96,0.6)',
+          smile:       '#3a1f14',
+          antenna:     '#d49380',
+          antennaCore: '#f4d4c0',
+          innerLight:  'rgba(255,248,238,0.18)',
+        }
+      : {
+          headLight:   '#f0d0b8',
+          headMid:     '#dba88c',
+          headDeep:    '#c4836a',
+          headRim:     '#8a5640',
+          ear:         '#a86b50',
+          earDetail:   'rgba(240,212,192,0.55)',
+          eyeBg:       '#2a1408',
+          eyeRing:     '#3a1f14',
+          eyeGlow:     '#f4d4c0',
+          eyeCore:     '#e0a890',
+          eyeCenter:   '#c4836a',
+          highlight:   '#ffffff',
+          cheek:       'rgba(196,98,72,0.42)',
+          smile:       '#5a3520',
+          antenna:     '#c4836a',
+          antennaCore: '#f4d4c0',
+          innerLight:  'rgba(255,253,245,0.42)',
+        }
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 46"
+      viewBox="0 0 48 52"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block', flexShrink: 0 }}
     >
-      {/* ── Pescoço / colar ── */}
-      <rect x="14" y="37" width="12" height="7" rx="3.5" fill={c.neck} />
-      <rect x="16" y="39.5" width="8" height="1.5" rx="0.75" fill={c.detail} opacity="0.45" />
-      <rect x="17" y="41.5" width="6" height="1"   rx="0.5"  fill={c.detail} opacity="0.3"  />
+      <defs>
+        <linearGradient id={headGradId} x1="0.5" y1="0" x2="0.5" y2="1">
+          <stop offset="0"    stopColor={c.headLight} />
+          <stop offset="0.55" stopColor={c.headMid} />
+          <stop offset="1"    stopColor={c.headDeep} />
+        </linearGradient>
+        <radialGradient id={eyeGradId} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0"    stopColor={c.eyeGlow} />
+          <stop offset="0.45" stopColor={c.eyeCore} />
+          <stop offset="0.85" stopColor={c.eyeCenter} />
+          <stop offset="1"    stopColor={c.eyeBg} />
+        </radialGradient>
+        <radialGradient id={innerLightId} cx="0.5" cy="0.25" r="0.6">
+          <stop offset="0" stopColor={c.innerLight} />
+          <stop offset="1" stopColor={c.innerLight} stopOpacity="0" />
+        </radialGradient>
+      </defs>
 
-      {/* ── Painéis laterais (orelhas C-3PO) ── */}
-      <rect x="3"  y="14" width="6" height="12" rx="3" fill={c.headBase} />
-      <rect x="31" y="14" width="6" height="12" rx="3" fill={c.headBase} />
-      {/* Linhas de detalhe das orelhas */}
-      {[0, 3.5, 7].map((offset, i) => (
-        <g key={i}>
-          <rect x="4.5"  y={16 + offset} width="3" height="1" rx="0.5" fill={c.detail} opacity="0.5" />
-          <rect x="32.5" y={16 + offset} width="3" height="1" rx="0.5" fill={c.detail} opacity="0.5" />
-        </g>
-      ))}
+      {/* Antenna */}
+      <line x1="24" y1="4.5" x2="24" y2="10" stroke={c.antenna} strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="24" cy="3.6" r="2.2" fill={c.antenna}>
+        {breathing && <animate attributeName="r" values="2.2;2.6;2.2" dur="3s" repeatCount="indefinite" />}
+      </circle>
+      <circle cx="24" cy="3.6" r="1.1" fill={c.antennaCore} />
+      <circle cx="23.6" cy="3.2" r="0.4" fill={c.highlight} opacity="0.9" />
 
-      {/* ── Cabeça principal — base escura ── */}
-      <rect x="8" y="6" width="24" height="32" rx="7" fill={c.headDark} />
+      {/* Side speaker panels */}
+      <rect x="3.5"  y="24" width="4.5" height="11" rx="2.25" fill={c.ear} />
+      <rect x="5"    y="26"   width="1.5" height="1" rx="0.5" fill={c.earDetail} />
+      <rect x="5"    y="28.5" width="1.5" height="1" rx="0.5" fill={c.earDetail} />
+      <rect x="5"    y="31"   width="1.5" height="1" rx="0.5" fill={c.earDetail} />
+      <rect x="40"   y="24" width="4.5" height="11" rx="2.25" fill={c.ear} />
+      <rect x="41.5" y="26"   width="1.5" height="1" rx="0.5" fill={c.earDetail} />
+      <rect x="41.5" y="28.5" width="1.5" height="1" rx="0.5" fill={c.earDetail} />
+      <rect x="41.5" y="31"   width="1.5" height="1" rx="0.5" fill={c.earDetail} />
 
-      {/* ── Placa frontal superior (testa) — tom médio ── */}
-      <rect x="8"  y="6"  width="24" height="14" rx="7" fill={c.headMid} />
-      <rect x="8"  y="13" width="24" height="7"         fill={c.headMid} />
+      {/* Head (soft squircle) */}
+      <rect x="9" y="11" width="30" height="34" rx="14" fill={`url(#${headGradId})`} />
+      <rect x="11.5" y="13" width="25" height="16" rx="11" fill={`url(#${innerLightId})`} />
+      <rect x="9" y="11" width="30" height="34" rx="14" fill="none" stroke={c.headRim} strokeOpacity="0.18" strokeWidth="0.6" />
 
-      {/* ── Antena central ── */}
-      <rect x="17" y="2"   width="6" height="5" rx="2.5" fill={c.headBase} />
-      <circle cx="20" cy="2" r="2.2" fill={c.headMid} />
-      <circle cx="20" cy="2" r="1.1" fill={c.eyeLight} />
-      <circle cx="20" cy="2" r="0.5" fill={c.eyeGlow}  />
+      {/* Left eye */}
+      <circle cx="17.5" cy="25" r="5.6" fill={c.eyeRing} />
+      <circle cx="17.5" cy="25" r="4.6" fill={`url(#${eyeGradId})`} />
+      <circle cx="17.5" cy="25" r="1.6" fill={c.eyeGlow} />
+      <circle cx="16.3" cy="23.5" r="1.1" fill={c.highlight}>
+        {breathing && <animate attributeName="opacity" values="0.95;0.55;0.95" dur="4s" repeatCount="indefinite" />}
+      </circle>
+      <circle cx="19" cy="26.5" r="0.45" fill={c.highlight} opacity="0.5" />
 
-      {/* ── Viseira / faixa dos olhos (placa escura interna) ── */}
-      <rect x="9" y="13.5" width="22" height="12" rx="2" fill={c.visor} />
-      {/* Linha de separação central (costura C-3PO) */}
-      <rect x="19.5" y="13.5" width="1" height="12" fill={c.headDark} opacity="0.6" />
+      {/* Right eye */}
+      <circle cx="30.5" cy="25" r="5.6" fill={c.eyeRing} />
+      <circle cx="30.5" cy="25" r="4.6" fill={`url(#${eyeGradId})`} />
+      <circle cx="30.5" cy="25" r="1.6" fill={c.eyeGlow} />
+      <circle cx="29.3" cy="23.5" r="1.1" fill={c.highlight}>
+        {breathing && <animate attributeName="opacity" values="0.95;0.55;0.95" dur="4s" repeatCount="indefinite" />}
+      </circle>
+      <circle cx="32" cy="26.5" r="0.45" fill={c.highlight} opacity="0.5" />
 
-      {/* ── Olho esquerdo — camadas concêntricas ── */}
-      <circle cx="16" cy="20" r="5"   fill={c.eyeBg}   />
-      <circle cx="16" cy="20" r="4.2" fill={c.eyeBase} />
-      <circle cx="16" cy="20" r="3"   fill={c.eyeMid}  />
-      <circle cx="16" cy="20" r="1.8" fill={c.eyeLight}/>
-      <circle cx="16" cy="20" r="0.9" fill={c.eyeGlow} />
-      {/* Reflexo */}
-      <circle cx="14.8" cy="18.8" r="0.6" fill="white" opacity="0.75" />
+      {/* Cheeks */}
+      <ellipse cx="13" cy="34" rx="2.2" ry="1.4" fill={c.cheek} />
+      <ellipse cx="35" cy="34" rx="2.2" ry="1.4" fill={c.cheek} />
 
-      {/* ── Olho direito ── */}
-      <circle cx="24" cy="20" r="5"   fill={c.eyeBg}   />
-      <circle cx="24" cy="20" r="4.2" fill={c.eyeBase} />
-      <circle cx="24" cy="20" r="3"   fill={c.eyeMid}  />
-      <circle cx="24" cy="20" r="1.8" fill={c.eyeLight}/>
-      <circle cx="24" cy="20" r="0.9" fill={c.eyeGlow} />
-      {/* Reflexo */}
-      <circle cx="22.8" cy="18.8" r="0.6" fill="white" opacity="0.75" />
-
-      {/* ── Face inferior (placa do queixo) ── */}
-      <rect x="10" y="27" width="20" height="11" rx="4" fill={c.headDark} />
-      {/* Detalhe interno */}
-      <rect x="12" y="29" width="16" height="7" rx="2.5" fill={c.visor} />
-
-      {/* ── Grelha da boca (estilo alto-falante) ── */}
-      {[0, 2.5, 5].map((offset, i) => (
-        <rect
-          key={i}
-          x={13 + i * 0.5}
-          y={30 + offset}
-          width={14 - i}
-          height="1"
-          rx="0.5"
-          fill={c.detail}
-          opacity={0.55 - i * 0.1}
-        />
-      ))}
-
-      {/* ── Sorriso sutil curvo (expressão humana C-3PO) ── */}
-      <path
-        d="M 14 33.5 Q 20 37 26 33.5"
-        stroke={c.eyeLight}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-
-      {/* ── Junções laterais da cabeça ── */}
-      <rect x="8"  y="18" width="1.5" height="8" rx="0.75" fill={c.detailLow} opacity="0.7" />
-      <rect x="30.5" y="18" width="1.5" height="8" rx="0.75" fill={c.detailLow} opacity="0.7" />
+      {/* Smile */}
+      <path d="M 19.5 36 Q 24 39.5 28.5 36" stroke={c.smile} strokeWidth="1.6" strokeLinecap="round" fill="none" opacity="0.85" />
     </svg>
   )
 }
