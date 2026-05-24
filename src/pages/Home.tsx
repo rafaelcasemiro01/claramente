@@ -293,24 +293,24 @@ export default function Home() {
           </button>
         </div>
 
-        {/* User row */}
+        {/* User row — colado no fundo, sem margin e sem bordas arredondadas */}
         <div style={{
-          margin: 10, padding: '8px 10px', borderRadius: 10,
+          padding: '12px 14px',
+          borderTop: `1px solid ${t.borderSoft}`,
           background: isDark ? t.surface : '#fff',
-          border: `1px solid ${t.borderSoft}`,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <div style={{
-            width: 30, height: 30, borderRadius: '50%',
-            background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
+            width: 32, height: 32, borderRadius: '50%',
+            background: t.accent,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 12.5, fontWeight: 600, flexShrink: 0,
+            color: '#faf6f0', fontSize: 13, fontWeight: 700, flexShrink: 0,
           }}>{firstName.charAt(0).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {profile?.name || 'Você'}
             </p>
-            <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2 }}>
+            <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2, marginTop: 2 }}>
               Plano gratuito
             </p>
           </div>
