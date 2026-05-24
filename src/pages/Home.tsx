@@ -308,25 +308,17 @@ export default function Home() {
               Plano gratuito
             </p>
           </div>
-          <button onClick={toggle} title="Tema" style={iconBtn(t)}>
-            {isDark ? <Sun size={14} color={t.textMuted}/> : <Moon size={14} color={t.textMuted}/>}
-          </button>
-        </div>
-
-        {/* Hidden secondary actions row */}
-        <div style={{
-          height: 44, padding: '0 12px', borderTop: `1px solid ${t.borderSoft}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        }}>
-          <button onClick={handleMute} title="Som" style={iconBtn(t)}>
-            {muted ? <VolumeOff size={15} color={t.danger}/> : <Volume size={15} color={t.textMuted}/>}
-          </button>
-          <button onClick={() => navigate('/perfil')} title="Perfil" style={iconBtn(t)}>
-            <Person size={15} color={t.textMuted}/>
-          </button>
-          <button onClick={signOut} title="Sair" style={iconBtn(t)}>
-            <LogOut size={15} color={t.textMuted}/>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <button onClick={handleMute} title="Som" style={iconBtn(t)}>
+              {muted ? <VolumeOff size={14} color={t.danger}/> : <Volume size={14} color={t.textMuted}/>}
+            </button>
+            <button onClick={toggle} title="Tema" style={iconBtn(t)}>
+              {isDark ? <Sun size={14} color={t.textMuted}/> : <Moon size={14} color={t.textMuted}/>}
+            </button>
+            <button onClick={signOut} title="Sair" style={iconBtn(t)}>
+              <LogOut size={14} color={t.textMuted}/>
+            </button>
+          </div>
         </div>
       </aside>
     )
