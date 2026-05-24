@@ -185,17 +185,41 @@ export default function Home() {
         display: 'flex', flexDirection: 'column',
         background: t.surface2, borderRight: `1px solid ${t.border}`,
       }}>
-        <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${t.borderSoft}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <ClaramenteLogo size={32} mode={mode}/>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: t.text, margin: 0, letterSpacing: -0.2, lineHeight: 1.2 }}>Claramente</p>
-              <p style={{ fontSize: 11, color: t.accentDeep, margin: 0, fontStyle: 'italic', opacity: 0.85, lineHeight: 1.2, marginTop: 2 }}>
-                Sua mente em equilíbrio.
-              </p>
-            </div>
-          </div>
+        {/* Top bar minimalista: ☰ + avatar (estilo GitHub) */}
+        <div style={{
+          height: 52, padding: '0 12px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 8,
+          borderBottom: `1px solid ${t.borderSoft}`,
+        }}>
+          <button style={iconBtn(t)} title="Menu" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="1.8" strokeLinecap="round">
+              <line x1="3" y1="6"  x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => navigate('/perfil')}
+            title={profile?.name || 'Meu perfil'}
+            aria-label="Meu perfil"
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: t.accent,
+              border: `1.5px solid ${t.accentBorder}`,
+              cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#faf6f0', fontSize: 12, fontWeight: 700,
+              transition: 'transform 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.borderColor = t.accent }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = t.accentBorder }}
+          >
+            {firstName.charAt(0).toUpperCase()}
+          </button>
+        </div>
 
+        {/* Nova conversa */}
+        <div style={{ padding: '12px 14px', borderBottom: `1px solid ${t.borderSoft}`, flexShrink: 0 }}>
           <button
             onClick={newChat}
             style={{
@@ -293,38 +317,22 @@ export default function Home() {
           </button>
         </div>
 
-        {/* User row — colado no fundo, sem margin e sem bordas arredondadas */}
+        {/* Ações rápidas no rodapé: tema, som, sair */}
         <div style={{
-          padding: '12px 14px',
+          padding: '8px 12px',
           borderTop: `1px solid ${t.borderSoft}`,
-          background: isDark ? t.surface : '#fff',
-          display: 'flex', alignItems: 'center', gap: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+          flexShrink: 0,
         }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: t.accent,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#faf6f0', fontSize: 13, fontWeight: 700, flexShrink: 0,
-          }}>{firstName.charAt(0).toUpperCase()}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile?.name || 'Você'}
-            </p>
-            <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2, marginTop: 2 }}>
-              Plano gratuito
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <button onClick={handleMute} title="Som" style={iconBtn(t)}>
-              {muted ? <VolumeOff size={14} color={t.danger}/> : <Volume size={14} color={t.textMuted}/>}
-            </button>
-            <button onClick={toggle} title="Tema" style={iconBtn(t)}>
-              {isDark ? <Sun size={14} color={t.textMuted}/> : <Moon size={14} color={t.textMuted}/>}
-            </button>
-            <button onClick={signOut} title="Sair" style={iconBtn(t)}>
-              <LogOut size={14} color={t.textMuted}/>
-            </button>
-          </div>
+          <button onClick={toggle} title="Tema" style={iconBtn(t)}>
+            {isDark ? <Sun size={16} color={t.textMuted}/> : <Moon size={16} color={t.textMuted}/>}
+          </button>
+          <button onClick={handleMute} title="Som" style={iconBtn(t)}>
+            {muted ? <VolumeOff size={16} color={t.danger}/> : <Volume size={16} color={t.textMuted}/>}
+          </button>
+          <button onClick={signOut} title="Sair" style={iconBtn(t)}>
+            <LogOut size={16} color={t.textMuted}/>
+          </button>
         </div>
       </aside>
     )
