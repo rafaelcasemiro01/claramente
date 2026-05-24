@@ -190,33 +190,54 @@ export default function Home() {
         display: 'flex', flexDirection: 'column',
         background: t.surface2, borderRight: `1px solid ${t.border}`,
       }}>
-        <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${t.borderSoft}` }}>
+        {/* ── GitHub-style top bar: ☰  +  avatar ── */}
+        <div style={{
+          height: 48, padding: '0 12px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: `1px solid ${t.borderSoft}`, flexShrink: 0,
+        }}>
+          {/* Hamburger / logo mark */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button style={iconBtn(t)} title="Menu" onClick={() => {}}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="1.8" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+            <ClaramenteLogo size={22} mode={mode}/>
+          </div>
+
+          {/* Avatar → perfil */}
+          <button
+            onClick={() => navigate('/perfil')}
+            title={profile?.name || 'Meu perfil'}
+            style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: t.accent,
+              border: `2px solid ${t.accentBorder}`,
+              cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#faf6f0', fontSize: 12, fontWeight: 700,
+              transition: 'transform 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.borderColor = t.accent }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = t.accentBorder }}
+          >
+            {firstName.charAt(0).toUpperCase()}
+          </button>
+        </div>
+
+        <div style={{ padding: '14px 18px 14px', borderBottom: `1px solid ${t.borderSoft}` }}>
+          {/* Logo + tagline */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <ClaramenteLogo size={32} mode={mode}/>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: t.text, margin: 0, letterSpacing: -0.2, lineHeight: 1.2 }}>Claramente</p>
               <p style={{ fontSize: 11, color: t.accentDeep, margin: 0, fontStyle: 'italic', opacity: 0.85, lineHeight: 1.2, marginTop: 2 }}>
                 Sua mente em equilíbrio.
               </p>
             </div>
-            {/* Avatar → perfil (estilo GitHub) */}
-            <button
-              onClick={() => navigate('/perfil')}
-              title="Meu perfil"
-              style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: t.accent, border: `2px solid ${t.accentBorder}`,
-                cursor: 'pointer', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#faf6f0', fontSize: 12, fontWeight: 700,
-                transition: 'border-color 0.15s, transform 0.15s',
-                overflow: 'hidden',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.transform = 'scale(1.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = t.accentBorder; e.currentTarget.style.transform = 'scale(1)' }}
-            >
-              {firstName.charAt(0).toUpperCase()}
-            </button>
           </div>
 
           <button
