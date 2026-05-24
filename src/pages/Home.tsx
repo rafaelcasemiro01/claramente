@@ -181,7 +181,7 @@ export default function Home() {
   function Sidebar() {
     return (
       <aside style={{
-        width: 264, flexShrink: 0, height: '100%',
+        width: 264, flexShrink: 0, height: '100dvh',
         display: 'flex', flexDirection: 'column',
         background: t.surface2, borderRight: `1px solid ${t.border}`,
       }}>
