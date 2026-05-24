@@ -1,13 +1,74 @@
+/* src/index.css */
+/* ───────────────────────────────────────────────────────────────────── */
+/* Claramente — estilos globais (terracotta & cream)                    */
+/* Removidas as fontes antigas (Lora, Plus Jakarta Sans).               */
+/* Inter é carregada via Google Fonts.                                  */
+/* ───────────────────────────────────────────────────────────────────── */
+
 /* stylelint-disable */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #faf6f0;
   color: #2a1f1a;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Dark mode global (aplicado pelo ThemeProvider via classList ou data-attr).
+   Se o ThemeContext não muda a classe do <html>, o JS de cada página já
+   troca os tokens — esta regra serve só como fallback para o body. */
+html[data-theme="dark"] body,
+html.dark body {
+  background-color: #1a1612;
+  color: #f0e8dc;
+}
+
+/* Selection — terracotta */
+::selection {
+  background: rgba(196,131,106,0.28);
+  color: #2a1f1a;
+}
+html[data-theme="dark"] ::selection,
+html.dark ::selection {
+  background: rgba(212,147,128,0.32);
+  color: #f0e8dc;
+}
+
+/* Scrollbar global warm */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(160,101,73,0.18);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(160,101,73,0.32);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb,
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(196,131,106,0.22);
+}
+
+/* Utility */
+.font-display {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.4px;
 }

@@ -1,10 +1,14 @@
 // src/components/Logo.tsx
+// ─────────────────────────────────────────────────────────────────────
 // The new Claramente mascot — a warm, friendly companion droid.
+// Drop-in replacement for the previous ClaramenteLogo.
+//
 // Props are backwards-compatible:
 //   <ClaramenteLogo size={28} />                    // works
-//   <ClaramenteLogo size={28} accent={anyColor} />  // accent accepted but ignored
+//   <ClaramenteLogo size={28} accent={anyColor} />  // accent is accepted but ignored — the mascot has its own warm palette
 //   <ClaramenteLogo size={28} mode="dark" />        // new — controls inner palette
-//   <ClaramenteLogo size={120} breathing />         // new — subtle pulse animation
+//   <ClaramenteLogo size={120} breathing />         // new — adds a subtle pulse animation
+// ─────────────────────────────────────────────────────────────────────
 
 import { useId } from 'react'
 
@@ -21,49 +25,49 @@ type Props = {
 export function ClaramenteLogo({ size = 32, mode = 'light', breathing = false }: Props) {
   const reactUid = useId()
   const uid = reactUid.replace(/:/g, '')
-  const headGradId   = `friendHeadGrad-${uid}`
-  const eyeGradId    = `friendEyeGrad-${uid}`
+  const headGradId  = `friendHeadGrad-${uid}`
+  const eyeGradId   = `friendEyeGrad-${uid}`
   const innerLightId = `friendInner-${uid}`
 
   const c =
     mode === 'dark'
       ? {
-          headLight:   '#d49380',
-          headMid:     '#b87560',
-          headDeep:    '#8a5640',
-          headRim:     '#5a3a2b',
-          ear:         '#9c6549',
-          earDetail:   'rgba(240,212,192,0.5)',
-          eyeBg:       '#1a0e08',
-          eyeRing:     '#3a1f14',
-          eyeGlow:     '#f4d4c0',
-          eyeCore:     '#e0a890',
-          eyeCenter:   '#c4836a',
-          highlight:   '#fff8ee',
-          cheek:       'rgba(217,117,96,0.6)',
-          smile:       '#3a1f14',
-          antenna:     '#d49380',
+          headLight: '#d49380',
+          headMid:   '#b87560',
+          headDeep:  '#8a5640',
+          headRim:   '#5a3a2b',
+          ear:       '#9c6549',
+          earDetail: 'rgba(240,212,192,0.5)',
+          eyeBg:     '#1a0e08',
+          eyeRing:   '#3a1f14',
+          eyeGlow:   '#f4d4c0',
+          eyeCore:   '#e0a890',
+          eyeCenter: '#c4836a',
+          highlight: '#fff8ee',
+          cheek:     'rgba(217,117,96,0.6)',
+          smile:     '#3a1f14',
+          antenna:   '#d49380',
           antennaCore: '#f4d4c0',
-          innerLight:  'rgba(255,248,238,0.18)',
+          innerLight: 'rgba(255,248,238,0.18)',
         }
       : {
-          headLight:   '#f0d0b8',
-          headMid:     '#dba88c',
-          headDeep:    '#c4836a',
-          headRim:     '#8a5640',
-          ear:         '#a86b50',
-          earDetail:   'rgba(240,212,192,0.55)',
-          eyeBg:       '#2a1408',
-          eyeRing:     '#3a1f14',
-          eyeGlow:     '#f4d4c0',
-          eyeCore:     '#e0a890',
-          eyeCenter:   '#c4836a',
-          highlight:   '#ffffff',
-          cheek:       'rgba(196,98,72,0.42)',
-          smile:       '#5a3520',
-          antenna:     '#c4836a',
+          headLight: '#f0d0b8',
+          headMid:   '#dba88c',
+          headDeep:  '#c4836a',
+          headRim:   '#8a5640',
+          ear:       '#a86b50',
+          earDetail: 'rgba(240,212,192,0.55)',
+          eyeBg:     '#2a1408',
+          eyeRing:   '#3a1f14',
+          eyeGlow:   '#f4d4c0',
+          eyeCore:   '#e0a890',
+          eyeCenter: '#c4836a',
+          highlight: '#ffffff',
+          cheek:     'rgba(196,98,72,0.42)',
+          smile:     '#5a3520',
+          antenna:   '#c4836a',
           antennaCore: '#f4d4c0',
-          innerLight:  'rgba(255,253,245,0.42)',
+          innerLight: 'rgba(255,253,245,0.42)',
         }
 
   return (
@@ -101,7 +105,7 @@ export function ClaramenteLogo({ size = 32, mode = 'light', breathing = false }:
       <circle cx="24" cy="3.6" r="1.1" fill={c.antennaCore} />
       <circle cx="23.6" cy="3.2" r="0.4" fill={c.highlight} opacity="0.9" />
 
-      {/* Side speaker panels */}
+      {/* Side speaker panels (the friendly-droid heritage) */}
       <rect x="3.5"  y="24" width="4.5" height="11" rx="2.25" fill={c.ear} />
       <rect x="5"    y="26"   width="1.5" height="1" rx="0.5" fill={c.earDetail} />
       <rect x="5"    y="28.5" width="1.5" height="1" rx="0.5" fill={c.earDetail} />

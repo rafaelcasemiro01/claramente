@@ -1,29 +1,32 @@
+// src/components/UserNav.tsx
+// ─────────────────────────────────────────────────────────────────────
+// Avatar + dropdown de navegação. Re-tematizado para terracotta & cream.
+// Lógica idêntica: avatar/iniciais, dropdown, navegação ativa.
+// ─────────────────────────────────────────────────────────────────────
+
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useColors, fontStack } from '@/lib/theme'
 
-interface Props {
-  isDark: boolean
-}
+interface Props { isDark: boolean }
 
-export function UserNav({ isDark }: Props) {
+export function UserNav({ isDark: _isDark }: Props) {
   const { profile } = useAuth()
   const navigate    = useNavigate()
   const location    = useLocation()
+  const t           = useColors()
+
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
-  const ACCENT    = isDark ? '#60A5FA' : '#2563EB'
   const firstName = profile?.name?.split(' ')[0] || '?'
   const avatarUrl = (profile as unknown as { avatar_url?: string })?.avatar_url || ''
   const isHome    = location.pathname === '/app'
 
-  // Fecha dropdown ao clicar fora
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -69,85 +72,82 @@ export function UserNav({ isDark }: Props) {
 
   return (
     <div ref={wrapRef} style={{ position: 'relative', flexShrink: 0 }}>
-
-      {/* Avatar button */}
       <button
         onClick={() => setOpen(p => !p)}
         title="Menu de navegação"
         style={{
-          width: 36, height: 36, borderRadius: '50%',
-          border: `2px solid ${open ? ACCENT : `${ACCENT}50`}`,
-          padding: 0, cursor: 'pointer',
-          overflow: 'hidden',
-          background: isDark ? 'rgba(30,64,175,0.25)' : '#EFF6FF',
+          width: 38, height: 38, borderRadius: '50%',
+          border: `2px solid ${open ? t.accent : `${t.accent}66`}`,
+          padding: 0, cursor: 'pointer', overflow: 'hidden',
+          background: avatarUrl ? t.accentSoft : `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'border-color 0.15s, box-shadow 0.15s',
-          boxShadow: open ? `0 0 0 3px ${ACCENT}20` : 'none',
+          boxShadow: open ? `0 0 0 3px ${t.accent}22` : 'none',
           WebkitTapHighlightColor: 'transparent',
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT; e.currentTarget.style.boxShadow = `0 0 0 3px ${ACCENT}20` }}
-        onMouseLeave={e => { if (!open) { e.currentTarget.style.borderColor = `${ACCENT}50`; e.currentTarget.style.boxShadow = 'none' } }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = t.accent
+          e.currentTarget.style.boxShadow = `0 0 0 3px ${t.accent}22`
+        }}
+        onMouseLeave={e => {
+          if (!open) {
+            e.currentTarget.style.borderColor = `${t.accent}66`
+            e.currentTarget.style.boxShadow = 'none'
+          }
+        }}
       >
         {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={firstName}
+          <img src={avatarUrl} alt={firstName}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            onError={() => {}}
-          />
+            onError={() => {}}/>
         ) : (
-          <span style={{ fontSize: 13, fontWeight: 700, color: ACCENT, fontFamily: "'Inter',sans-serif", userSelect: 'none' }}>
+          <span style={{
+            fontSize: 14, fontWeight: 700, color: '#fff',
+            fontFamily: fontStack, userSelect: 'none',
+          }}>
             {firstName.charAt(0).toUpperCase()}
           </span>
         )}
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', left: 0,
-          minWidth: 170, zIndex: 500,
-          background: isDark ? '#1E293B' : '#FFFFFF',
-          border: `1px solid ${isDark ? '#334155' : '#E0F2FE'}`,
-          borderRadius: 12,
-          boxShadow: isDark
+          minWidth: 180, zIndex: 500,
+          background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14,
+          boxShadow: t.bg.startsWith('#1a')
             ? '0 12px 32px rgba(0,0,0,0.45)'
-            : '0 12px 32px rgba(37,99,235,0.12)',
-          overflow: 'hidden',
-          animation: 'dropIn 0.15s ease',
+            : '0 12px 32px rgba(106,64,48,0.14)',
+          overflow: 'hidden', animation: 'dropIn 0.15s ease',
         }}>
-
-          {/* Cabeçalho do usuário */}
-          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${isDark ? '#334155' : '#E0F2FE'}` }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#F1F5F9' : '#0F172A', margin: 0, fontFamily: "'Inter',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile?.name || firstName}
-            </p>
-            <p style={{ fontSize: 11, color: isDark ? '#475569' : '#94A3B8', margin: 0, fontFamily: "'Inter',sans-serif" }}>
+          <div style={{ padding: '12px 14px', borderBottom: `1px solid ${t.borderSoft}` }}>
+            <p style={{
+              fontSize: 13, fontWeight: 600, color: t.text, margin: 0,
+              fontFamily: fontStack, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{profile?.name || firstName}</p>
+            <p style={{ fontSize: 11, color: t.accentDeep, margin: 0, fontStyle: 'italic', fontFamily: fontStack }}>
               Claramente
             </p>
           </div>
 
-          {/* Itens */}
           {menuItems.map(item => (
             <button
               key={item.label}
               onClick={item.action}
               style={{
-                width: '100%', padding: '10px 14px',
+                width: '100%', padding: '11px 14px',
                 display: 'flex', alignItems: 'center', gap: 10,
-                background: item.active
-                  ? (isDark ? 'rgba(30,64,175,0.2)' : '#EFF6FF')
-                  : 'transparent',
+                background: item.active ? t.accentSoft : 'transparent',
                 border: 'none', cursor: 'pointer',
-                color: item.active ? ACCENT : (isDark ? '#94A3B8' : '#374151'),
-                fontSize: 13, fontFamily: "'Inter',sans-serif", fontWeight: item.active ? 600 : 400,
+                color: item.active ? t.accentDeep : t.textSub,
+                fontSize: 13, fontFamily: fontStack, fontWeight: item.active ? 600 : 500,
                 textAlign: 'left', transition: 'background 0.12s',
                 WebkitTapHighlightColor: 'transparent',
               }}
-              onMouseEnter={e => { if (!item.active) e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.04)' : '#F0F9FF' }}
+              onMouseEnter={e => { if (!item.active) e.currentTarget.style.background = t.surface2 }}
               onMouseLeave={e => { if (!item.active) e.currentTarget.style.background = 'transparent' }}
             >
-              <span style={{ color: item.active ? ACCENT : (isDark ? '#64748B' : '#94A3B8'), display: 'flex' }}>
+              <span style={{ color: item.active ? t.accentDeep : t.textMuted, display: 'flex' }}>
                 {item.icon}
               </span>
               {item.label}
@@ -157,10 +157,7 @@ export function UserNav({ isDark }: Props) {
       )}
 
       <style>{`
-        @keyframes dropIn {
-          from { opacity:0; transform:translateY(-6px) }
-          to   { opacity:1; transform:translateY(0) }
-        }
+        @keyframes dropIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } }
       `}</style>
     </div>
   )

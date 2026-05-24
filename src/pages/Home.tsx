@@ -1,5 +1,15 @@
 // src/pages/Home.tsx
-// Claramente — Home / Chat (re-themed: terracotta & cream)
+// ─────────────────────────────────────────────────────────────────────
+// Claramente — Home / Chat (re-themed)
+//
+// All original hooks and behaviors preserved (useChat, useProactive,
+// audio + speechEngine + emotionEngine, mute, journaling, crisis,
+// sidebar groups). Visual treatment changed to:
+//   • Prose-led messages (no bubbles), with role labels
+//   • Soft paper-feel sidebar with active item highlighted by a left bar
+//   • Ambient terracotta aura behind the input
+//   • New ClaramenteLogo mascot throughout
+// ─────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,6 +30,7 @@ import {
 import type { ConversationItem } from '@/hooks/useChat'
 import { useColors, fontStack } from '@/lib/theme'
 
+// ── Helpers ─────────────────────────────────────────────────────────
 function TypingDots({ color }: { color: string }) {
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '4px 0' }}>
@@ -70,6 +81,7 @@ function groupConvs(convs: ConversationItem[]) {
   return g.filter(x => x.items.length > 0)
 }
 
+// ── Page ────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
@@ -164,6 +176,7 @@ export default function Home() {
     textarea::placeholder { color: ${t.textMuted} !important; opacity: 0.7; }
   `
 
+  // ── Sidebar ───────────────────────────────────────────────────────
   function Sidebar() {
     return (
       <aside style={{
@@ -181,13 +194,16 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <button onClick={newChat} style={{
-            width: '100%', height: 38, borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: t.accent, color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: fontStack,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            boxShadow: `0 2px 8px ${t.accent}44, inset 0 1px 0 rgba(255,255,255,0.22)`,
-            transition: 'filter 0.15s',
-          }}
+
+          <button
+            onClick={newChat}
+            style={{
+              width: '100%', height: 38, borderRadius: 10, border: 'none', cursor: 'pointer',
+              background: t.accent, color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: fontStack,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              boxShadow: `0 2px 8px ${t.accent}44, inset 0 1px 0 rgba(255,255,255,0.22)`,
+              transition: 'filter 0.15s',
+            }}
             onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
             onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}
           >
@@ -203,20 +219,35 @@ export default function Home() {
           )}
           {grouped.map(g => (
             <div key={g.label} style={{ marginBottom: 6 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, color: t.textMuted, padding: '10px 10px 6px', letterSpacing: 0.7, textTransform: 'uppercase', margin: 0 }}>{g.label}</p>
+              <p style={{
+                fontSize: 10, fontWeight: 600, color: t.textMuted,
+                padding: '10px 10px 6px', letterSpacing: 0.7, textTransform: 'uppercase', margin: 0,
+              }}>{g.label}</p>
               {g.items.map(c => {
                 const active = conversationId === c.id
                 return (
-                  <button key={c.id} onClick={loadConv(c.id)} style={{
-                    width: '100%', textAlign: 'left', padding: '8px 10px 8px 11px',
-                    borderRadius: 8, border: 'none', cursor: 'pointer', marginBottom: 1,
-                    background: active ? (isDark ? t.surface3 : '#fff') : 'transparent',
-                    boxShadow: active && !isDark ? '0 1px 3px rgba(106,64,48,0.06)' : 'none',
-                    borderLeft: active ? `2px solid ${t.accent}` : '2px solid transparent',
-                    transition: 'background 0.12s',
-                  }}>
-                    <p style={{ fontSize: 13, fontWeight: active ? 600 : 500, color: active ? t.text : t.textSub, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</p>
-                    <p style={{ fontSize: 11.5, color: t.textMuted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.preview}</p>
+                  <button
+                    key={c.id}
+                    onClick={loadConv(c.id)}
+                    style={{
+                      width: '100%', textAlign: 'left', padding: '8px 10px 8px 11px',
+                      borderRadius: 8, border: 'none', cursor: 'pointer', marginBottom: 1,
+                      background: active ? (isDark ? t.surface3 : '#fff') : 'transparent',
+                      boxShadow: active && !isDark ? '0 1px 3px rgba(106,64,48,0.06)' : 'none',
+                      borderLeft: active ? `2px solid ${t.accent}` : '2px solid transparent',
+                      transition: 'background 0.12s',
+                    }}
+                  >
+                    <p style={{
+                      fontSize: 13, fontWeight: active ? 600 : 500,
+                      color: active ? t.text : t.textSub,
+                      margin: '0 0 2px',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{c.title}</p>
+                    <p style={{
+                      fontSize: 11.5, color: t.textMuted, margin: 0,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{c.preview}</p>
                   </button>
                 )
               })}
@@ -224,37 +255,63 @@ export default function Home() {
           ))}
         </div>
 
+        {/* Journaling + Reports */}
         <div style={{ padding: 10, borderTop: `1px solid ${t.borderSoft}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <button onClick={journal} style={{
-            width: '100%', padding: '10px 12px', borderRadius: 10,
-            border: `1px dashed ${t.accentBorder}`, background: t.accentSoft,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 9,
-            color: t.accentDeep, fontSize: 12.5, fontWeight: 600, fontFamily: fontStack,
-          }}>
+          <button
+            onClick={journal}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 10,
+              border: `1px dashed ${t.accentBorder}`, background: t.accentSoft,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 9,
+              color: t.accentDeep, fontSize: 12.5, fontWeight: 600, fontFamily: fontStack,
+            }}
+          >
             <Sparkle size={14} color={t.accentDeep}/> Journaling guiado
           </button>
-          <button onClick={() => navigate('/relatorios')} style={{
-            width: '100%', padding: '9px 12px', borderRadius: 10,
-            border: 'none', background: 'transparent', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 9,
-            color: t.textSub, fontSize: 12.5, fontWeight: 500, fontFamily: fontStack,
-          }}>
+          <button
+            onClick={() => navigate('/relatorios')}
+            style={{
+              width: '100%', padding: '9px 12px', borderRadius: 10,
+              border: 'none', background: 'transparent', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 9,
+              color: t.textSub, fontSize: 12.5, fontWeight: 500, fontFamily: fontStack,
+            }}
+          >
             <BarChart size={14} color={t.textSub}/> Relatórios
           </button>
         </div>
 
-        <div style={{ margin: 10, padding: '8px 10px', borderRadius: 10, background: isDark ? t.surface : '#fff', border: `1px solid ${t.borderSoft}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12.5, fontWeight: 600, flexShrink: 0 }}>{firstName.charAt(0).toUpperCase()}</div>
+        {/* User row */}
+        <div style={{
+          margin: 10, padding: '8px 10px', borderRadius: 10,
+          background: isDark ? t.surface : '#fff',
+          border: `1px solid ${t.borderSoft}`,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontSize: 12.5, fontWeight: 600, flexShrink: 0,
+          }}>{firstName.charAt(0).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2 }}>{profile?.name || 'Você'}</p>
-            <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2 }}>{muted ? 'Som desligado' : 'Som ligado'}</p>
+            <p style={{ fontSize: 12.5, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2 }}>
+              {profile?.name || 'Você'}
+            </p>
+            <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2 }}>
+              {muted ? 'Som desligado' : 'Som ligado'}
+            </p>
           </div>
           <button onClick={toggle} title="Tema" style={iconBtn(t)}>
             {isDark ? <Sun size={14} color={t.textMuted}/> : <Moon size={14} color={t.textMuted}/>}
           </button>
         </div>
 
-        <div style={{ height: 44, padding: '0 12px', borderTop: `1px solid ${t.borderSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
+        {/* Hidden secondary actions row */}
+        <div style={{
+          height: 44, padding: '0 12px', borderTop: `1px solid ${t.borderSoft}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+        }}>
           <button onClick={handleMute} title="Som" style={iconBtn(t)}>
             {muted ? <VolumeOff size={15} color={t.danger}/> : <Volume size={15} color={t.textMuted}/>}
           </button>
@@ -269,84 +326,151 @@ export default function Home() {
     )
   }
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
-    <div style={{ height: '100dvh', display: 'flex', background: t.bg, fontFamily: fontStack, overflow: 'hidden', opacity: mounted ? 1 : 0, transition: 'opacity 0.3s ease', color: t.text }}>
+    <div style={{
+      height: '100dvh', display: 'flex', background: t.bg, fontFamily: fontStack,
+      overflow: 'hidden', opacity: mounted ? 1 : 0, transition: 'opacity 0.3s ease',
+      color: t.text,
+    }}>
       <style>{CSS}</style>
 
       <div className="sb"><Sidebar/></div>
 
       {sidebarOpen && (
         <>
-          <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40, backdropFilter: 'blur(4px)' }}/>
-          <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, animation: 'sIn 0.22s ease', width: 280, maxWidth: '88vw' }}><Sidebar/></div>
+          <div onClick={() => setSidebarOpen(false)} style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+            zIndex: 40, backdropFilter: 'blur(4px)',
+          }}/>
+          <div style={{
+            position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
+            animation: 'sIn 0.22s ease', width: 280, maxWidth: '88vw',
+          }}><Sidebar/></div>
         </>
       )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
-        <header className="mhd" style={{ background: t.bg, borderBottom: `1px solid ${t.borderSoft}`, height: 52, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+
+        {/* Mobile header */}
+        <header className="mhd" style={{
+          background: t.bg, borderBottom: `1px solid ${t.borderSoft}`,
+          height: 52, padding: '0 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
+        }}>
           <UserNav isDark={isDark}/>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ClaramenteLogo size={24} mode={mode}/>
-            <span style={{ fontSize: 15, fontWeight: 700, color: t.text }}>{isJournalingMode ? 'Journaling' : 'Claramente'}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: t.text }}>
+              {isJournalingMode ? 'Journaling' : 'Claramente'}
+            </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button onClick={handleMute} style={iconBtn(t)}>{muted ? <VolumeOff size={16} color={t.danger}/> : <Volume size={16} color={t.textMuted}/>}</button>
-            <button onClick={() => setSidebarOpen(true)} style={iconBtn(t)}><Menu size={18} color={t.textSub}/></button>
+            <button onClick={handleMute} style={iconBtn(t)}>
+              {muted ? <VolumeOff size={16} color={t.danger}/> : <Volume size={16} color={t.textMuted}/>}
+            </button>
+            <button onClick={() => setSidebarOpen(true)} style={iconBtn(t)}>
+              <Menu size={18} color={t.textSub}/>
+            </button>
           </div>
         </header>
 
-        <header style={{ height: 56, padding: '0 28px', display: 'none', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, borderBottom: `1px solid ${t.borderSoft}`, background: t.bg }} className="dhd">
+        {/* Desktop header */}
+        <header style={{
+          height: 56, padding: '0 28px',
+          display: 'none', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0, borderBottom: `1px solid ${t.borderSoft}`, background: t.bg,
+        }} className="dhd">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <p style={{ fontSize: 14, fontWeight: 600, color: t.text, margin: 0 }}>{isJournalingMode ? 'Journaling guiado' : 'Conversa de hoje'}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 999, background: t.accentSoft, border: `1px solid ${t.accentBorder}` }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: t.text, margin: 0 }}>
+              {isJournalingMode ? 'Journaling guiado' : 'Conversa de hoje'}
+            </p>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 999,
+              background: t.accentSoft, border: `1px solid ${t.accentBorder}`,
+            }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.accent, animation: 'pulseB 2.4s ease-in-out infinite' }}/>
               <span style={{ fontSize: 11, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.4 }}>sereno</span>
             </div>
           </div>
-          <button onClick={handleMute} style={iconBtn(t)}>{muted ? <VolumeOff size={15} color={t.danger}/> : <Volume size={15} color={t.textMuted}/>}</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={handleMute} style={iconBtn(t)}>
+              {muted ? <VolumeOff size={15} color={t.danger}/> : <Volume size={15} color={t.textMuted}/>}
+            </button>
+          </div>
         </header>
         <style>{`@media (min-width: 768px) { .dhd { display: flex !important } }`}</style>
 
+        {/* Journaling banner */}
         {isJournalingMode && (
-          <div style={{ padding: '8px 24px', background: t.accentSoft, borderBottom: `1px solid ${t.accentBorder}`, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: t.accentDeep }}>
+          <div style={{
+            padding: '8px 24px', background: t.accentSoft,
+            borderBottom: `1px solid ${t.accentBorder}`,
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: 13, fontWeight: 500, color: t.accentDeep,
+          }}>
             <Sparkle size={13} color={t.accentDeep}/> Modo Journaling Guiado
             <span style={{ fontWeight: 400, color: t.textMuted, fontSize: 12 }}>— sessão reflexiva</span>
           </div>
         )}
 
+        {/* Crisis banner — quiet, dashed border, restrained */}
         {isCrisis && (
-          <div style={{ margin: '12px 24px 0', padding: '10px 14px', borderRadius: 10, background: 'transparent', border: `1px dashed ${t.border}`, fontSize: 12.5, color: t.textSub, lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            margin: '12px 24px 0', padding: '10px 14px', borderRadius: 10,
+            background: 'transparent', border: `1px dashed ${t.border}`,
+            fontSize: 12.5, color: t.textSub, lineHeight: 1.5,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
             <span style={{ color: t.accentDeep }}>♡</span>
             Em momentos difíceis, o <strong style={{ color: t.text, fontWeight: 600 }}>CVV (188)</strong> está disponível 24h, gratuitamente · cvv.org.br
           </div>
         )}
 
+        {/* Scroll area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 24px 140px' }}>
           <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
 
+            {/* Empty state */}
             {messages.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0 24px', animation: 'fIn 0.4s ease' }}>
                 <div style={{ marginBottom: 20, filter: `drop-shadow(0 8px 24px ${t.accent}55)` }}>
                   <ClaramenteLogo size={80} mode={mode} breathing/>
                 </div>
-                <h2 style={{ fontSize: 'clamp(22px,4vw,28px)', fontWeight: 600, color: t.text, marginBottom: 8, textAlign: 'center', letterSpacing: -0.6 }}>
+                <h2 style={{
+                  fontSize: 'clamp(22px,4vw,28px)', fontWeight: 600, color: t.text,
+                  marginBottom: 8, textAlign: 'center', letterSpacing: -0.6,
+                }}>
                   {!greetDone ? <Typewriter text={`Olá, ${firstName}`} speed={45} onDone={() => setGreetDone(true)}/> : `Olá, ${firstName}`}
                 </h2>
-                <p style={{ fontSize: 14, color: t.textSub, textAlign: 'center', fontStyle: 'italic' }}>Como você está se sentindo hoje?</p>
+                <p style={{ fontSize: 14, color: t.textSub, textAlign: 'center', fontStyle: 'italic' }}>
+                  Como você está se sentindo hoje?
+                </p>
 
                 {loadingSmartSummary && <div style={{ marginTop: 20 }}><TypingDots color={t.accent}/></div>}
                 {smartSummary && !loadingSmartSummary && (
-                  <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderLeft: `3px solid ${t.accent}`, borderRadius: '4px 12px 12px 4px', padding: '14px 18px', marginTop: 22, width: '100%', animation: 'fIn 0.4s ease' }}>
-                    <p style={{ fontSize: 14, color: t.textSub, lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>{smartSummary}</p>
+                  <div style={{
+                    background: t.surface, border: `1px solid ${t.border}`,
+                    borderLeft: `3px solid ${t.accent}`,
+                    borderRadius: '4px 12px 12px 4px',
+                    padding: '14px 18px', marginTop: 22, width: '100%', animation: 'fIn 0.4s ease',
+                  }}>
+                    <p style={{ fontSize: 14, color: t.textSub, lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>
+                      {smartSummary}
+                    </p>
                   </div>
                 )}
 
                 {greetDone && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 22, width: '100%', animation: 'fIn 0.4s ease 0.1s both' }}>
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
+                    marginTop: 22, width: '100%', animation: 'fIn 0.4s ease 0.1s both',
+                  }}>
                     <ActionCard title="Journaling guiado" subtitle="Sessão reflexiva profunda" t={t} accent onClick={() => { audio.init(); journal() }}/>
-                    <ActionCard title="Estou ansioso"     subtitle="Preciso conversar sobre isso" t={t} onClick={() => { audio.init(); sendMessage('Estou me sentindo ansioso ultimamente.') }}/>
-                    <ActionCard title="Quero refletir"    subtitle="Momento de introspecção"      t={t} onClick={() => { audio.init(); sendMessage('Quero fazer uma reflexão sobre minha vida.') }}/>
-                    <ActionCard title="Me sinto bem"      subtitle="Compartilhar gratidão"        t={t} onClick={() => { audio.init(); sendMessage('Estou me sentindo bem hoje!') }}/>
+                    <ActionCard title="Estou ansioso"     subtitle="Preciso conversar sobre isso" t={t}        onClick={() => { audio.init(); sendMessage('Estou me sentindo ansioso ultimamente.') }}/>
+                    <ActionCard title="Quero refletir"     subtitle="Momento de introspecção"     t={t}        onClick={() => { audio.init(); sendMessage('Quero fazer uma reflexão sobre minha vida.') }}/>
+                    <ActionCard title="Me sinto bem"       subtitle="Compartilhar gratidão"       t={t}        onClick={() => { audio.init(); sendMessage('Estou me sentindo bem hoje!') }}/>
                   </div>
                 )}
               </div>
@@ -355,29 +479,48 @@ export default function Home() {
             {suggestion && (
               <div style={{ marginBottom: 16 }}>
                 <ProactiveCard
-                  message={suggestion.message} action={suggestion.action}
+                  message={suggestion.message}
+                  action={suggestion.action}
                   onAccept={() => { dismiss(); sendMessage(suggestion.prompt) }}
-                  onDismiss={dismiss} delay={500}
+                  onDismiss={dismiss}
+                  delay={500}
                 />
               </div>
             )}
 
+            {/* Messages — prose */}
             {messages.map(msg => (
               <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: 24, animation: 'mIn 0.25s ease' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   {msg.role === 'assistant' ? (
                     <>
                       <ClaramenteLogo size={18} mode={mode}/>
-                      <span style={{ fontSize: 11.5, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.5, textTransform: 'uppercase' }}>Claramente</span>
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                        Claramente
+                      </span>
                     </>
                   ) : (
                     <>
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>{firstName.charAt(0).toUpperCase()}</div>
-                      <span style={{ fontSize: 11.5, fontWeight: 600, color: t.textSub, letterSpacing: 0.5, textTransform: 'uppercase' }}>Você</span>
+                      <div style={{
+                        width: 18, height: 18, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: 9, fontWeight: 700,
+                      }}>{firstName.charAt(0).toUpperCase()}</div>
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: t.textSub, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                        Você
+                      </span>
                     </>
                   )}
                 </div>
-                <div style={{ fontSize: msg.role === 'assistant' ? 16 : 15.5, lineHeight: msg.role === 'assistant' ? 1.7 : 1.65, color: msg.role === 'assistant' ? t.text : t.textSub, whiteSpace: 'pre-wrap', wordBreak: 'break-word', letterSpacing: -0.1, paddingLeft: 26, marginLeft: 4, borderLeft: msg.role === 'assistant' ? `2px solid ${t.accentSoft}` : `2px solid transparent` }}>
+                <div style={{
+                  fontSize: msg.role === 'assistant' ? 16 : 15.5,
+                  lineHeight: msg.role === 'assistant' ? 1.7 : 1.65,
+                  color: msg.role === 'assistant' ? t.text : t.textSub,
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word', letterSpacing: -0.1,
+                  paddingLeft: 26, marginLeft: 4,
+                  borderLeft: msg.role === 'assistant' ? `2px solid ${t.accentSoft}` : `2px solid transparent`,
+                }}>
                   {msg.content}
                 </div>
               </div>
@@ -386,7 +529,9 @@ export default function Home() {
             {isTyping && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', animation: 'fIn 0.2s ease' }}>
                 <ClaramenteLogo size={18} mode={mode}/>
-                <span style={{ fontSize: 11.5, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.5, textTransform: 'uppercase' }}>Claramente</span>
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                  Claramente
+                </span>
                 <TypingDots color={t.accent}/>
               </div>
             )}
@@ -394,22 +539,66 @@ export default function Home() {
           </div>
         </div>
 
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px', paddingBottom: 'max(18px, env(safe-area-inset-bottom, 18px))', background: `linear-gradient(to top, ${t.bg} 75%, ${t.bg}00)`, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', bottom: -50, left: 0, right: 0, height: 140, background: `radial-gradient(ellipse at 50% 100%, ${t.accent}22 0%, transparent 65%)`, filter: 'blur(20px)', pointerEvents: 'none', animation: 'auraSoft 6s ease-in-out infinite' }}/>
+        {/* Input with ambient aura */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: '20px 24px', paddingBottom: 'max(18px, env(safe-area-inset-bottom, 18px))',
+          background: `linear-gradient(to top, ${t.bg} 75%, ${t.bg}00)`,
+          pointerEvents: 'none',
+        }}>
+          {/* Aura */}
+          <div style={{
+            position: 'absolute', bottom: -50, left: 0, right: 0, height: 140,
+            background: `radial-gradient(ellipse at 50% 100%, ${t.accent}22 0%, transparent 65%)`,
+            filter: 'blur(20px)', pointerEvents: 'none',
+            animation: 'auraSoft 6s ease-in-out infinite',
+          }}/>
           <div style={{ maxWidth: 680, margin: '0 auto', position: 'relative', pointerEvents: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 24, padding: 8, boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(106,64,48,0.10), 0 2px 4px rgba(106,64,48,0.04)', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-              onFocusCapture={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.boxShadow = `0 0 0 3px ${t.accent}22, 0 8px 24px rgba(106,64,48,0.10)` }}
-              onBlurCapture={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.boxShadow = isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(106,64,48,0.10), 0 2px 4px rgba(106,64,48,0.04)' }}
+            <div style={{
+              display: 'flex', alignItems: 'flex-end', gap: 6,
+              background: t.surface, border: `1px solid ${t.border}`,
+              borderRadius: 24, padding: 8,
+              boxShadow: isDark
+                ? '0 8px 24px rgba(0,0,0,0.5)'
+                : '0 8px 24px rgba(106,64,48,0.10), 0 2px 4px rgba(106,64,48,0.04)',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}
+              onFocusCapture={e => {
+                e.currentTarget.style.borderColor = t.accent
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${t.accent}22, 0 8px 24px rgba(106,64,48,0.10)`
+              }}
+              onBlurCapture={e => {
+                e.currentTarget.style.borderColor = t.border
+                e.currentTarget.style.boxShadow = isDark
+                  ? '0 8px 24px rgba(0,0,0,0.5)'
+                  : '0 8px 24px rgba(106,64,48,0.10), 0 2px 4px rgba(106,64,48,0.04)'
+              }}
             >
               <textarea
-                ref={taRef} value={input}
+                ref={taRef}
+                value={input}
                 onChange={e => { setInput(e.target.value); autoResize() }}
                 onKeyDown={onKey}
                 placeholder={isJournalingMode ? 'Escreva sua reflexão...' : 'Como você está se sentindo?'}
                 rows={1}
-                style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 14.5, lineHeight: 1.6, resize: 'none', color: t.text, maxHeight: 120, padding: '10px 12px', display: 'block', minWidth: 0 }}
+                style={{
+                  flex: 1, background: 'none', border: 'none', outline: 'none',
+                  fontSize: 14.5, lineHeight: 1.6, resize: 'none',
+                  color: t.text, maxHeight: 120, padding: '10px 12px', display: 'block',
+                  minWidth: 0,
+                }}
               />
-              <button onClick={handleSend} disabled={isTyping || !input.trim()} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: isTyping || !input.trim() ? 'not-allowed' : 'pointer', background: isTyping || !input.trim() ? t.surface2 : t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', boxShadow: isTyping || !input.trim() ? 'none' : `0 2px 8px ${t.accent}66` }}
+              <button
+                onClick={handleSend}
+                disabled={isTyping || !input.trim()}
+                style={{
+                  width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0,
+                  cursor: isTyping || !input.trim() ? 'not-allowed' : 'pointer',
+                  background: isTyping || !input.trim() ? t.surface2 : t.accent,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s',
+                  boxShadow: isTyping || !input.trim() ? 'none' : `0 2px 8px ${t.accent}66`,
+                }}
                 onMouseEnter={e => { if (!isTyping && input.trim()) e.currentTarget.style.filter = 'brightness(1.08)' }}
                 onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)' }}
               >
@@ -426,17 +615,45 @@ export default function Home() {
   )
 }
 
+// ── Sub-components ──────────────────────────────────────────────────
 type T = ReturnType<typeof useColors>
 
 function iconBtn(t: T): React.CSSProperties {
-  return { width: 34, height: 34, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', WebkitTapHighlightColor: 'transparent' }
+  return {
+    width: 34, height: 34, borderRadius: 8,
+    border: 'none', background: 'transparent', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    WebkitTapHighlightColor: 'transparent',
+  }
 }
 
-function ActionCard({ title, subtitle, t, accent = false, onClick }: { title: string; subtitle: string; t: T; accent?: boolean; onClick: () => void }) {
+function ActionCard({ title, subtitle, t, accent = false, onClick }: {
+  title: string; subtitle: string; t: T; accent?: boolean; onClick: () => void
+}) {
   const [hov, setHov] = useState(false)
   return (
-    <button onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ height: '100%', width: '100%', padding: '14px 16px', borderRadius: 12, cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4, background: accent ? (hov ? `${t.accent}1A` : t.accentSoft) : (hov ? t.surface3 : t.surface), border: `1px solid ${accent ? (hov ? t.accent : t.accentBorder) : (hov ? t.border : t.borderSoft)}`, transition: 'all 0.15s ease', transform: hov ? 'translateY(-1px)' : 'translateY(0)' }}>
-      <p style={{ fontSize: 13, fontWeight: 600, margin: 0, color: accent ? t.accentDeep : t.text, lineHeight: 1.3 }}>{title}</p>
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        height: '100%', width: '100%',
+        padding: '14px 16px', borderRadius: 12,
+        cursor: 'pointer', textAlign: 'left',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4,
+        background: accent
+          ? (hov ? `${t.accent}1A` : t.accentSoft)
+          : (hov ? t.surface3 : t.surface),
+        border: `1px solid ${accent ? (hov ? t.accent : t.accentBorder) : (hov ? t.border : t.borderSoft)}`,
+        transition: 'all 0.15s ease',
+        transform: hov ? 'translateY(-1px)' : 'translateY(0)',
+      }}
+    >
+      <p style={{
+        fontSize: 13, fontWeight: 600, margin: 0,
+        color: accent ? t.accentDeep : t.text,
+        lineHeight: 1.3,
+      }}>{title}</p>
       <p style={{ fontSize: 12, margin: 0, color: t.textMuted, lineHeight: 1.4 }}>{subtitle}</p>
     </button>
   )

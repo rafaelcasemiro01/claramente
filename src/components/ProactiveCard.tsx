@@ -1,5 +1,10 @@
+// src/components/ProactiveCard.tsx
+// ─────────────────────────────────────────────────────────────────────
+// Card de sugestão proativa do assistente. Re-tematizado.
+// ─────────────────────────────────────────────────────────────────────
+
 import { useState, useEffect } from 'react'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useColors, fontStack } from '@/lib/theme'
 
 interface Props {
   message: string
@@ -10,44 +15,62 @@ interface Props {
 }
 
 export function ProactiveCard({ message, action, onAccept, onDismiss, delay = 0 }: Props) {
-  const { isDark } = useTheme()
+  const t = useColors()
   const [visible, setVisible] = useState(delay === 0)
 
   useEffect(() => {
     if (delay === 0) { setVisible(true); return }
-    const t = setTimeout(() => setVisible(true), delay)
-    return () => clearTimeout(t)
+    const tid = setTimeout(() => setVisible(true), delay)
+    return () => clearTimeout(tid)
   }, [delay])
 
-  const ACCENT = isDark ? '#60A5FA' : '#2563EB'
+  const isDark = t.bg.startsWith('#1a')
 
   return (
     <div style={{
-      background:  isDark ? '#1E293B' : '#FFFFFF',
-      border:      `1px solid ${isDark ? '#1E40AF' : '#BFDBFE'}`,
-      borderLeft:  `3px solid ${ACCENT}`,
-      borderRadius: 12,
-      padding:     '14px 16px',
-      opacity:     visible ? 1 : 0,
-      transform:   visible ? 'translateY(0)' : 'translateY(10px)',
-      transition:  'all 0.4s cubic-bezier(0.16,1,0.3,1)',
-      boxShadow:   isDark
+      background: t.surface,
+      border: `1px solid ${t.border}`,
+      borderLeft: `3px solid ${t.accent}`,
+      borderRadius: '4px 14px 14px 4px',
+      padding: '16px 18px',
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'translateY(0)' : 'translateY(10px)',
+      transition: 'all 0.4s cubic-bezier(0.16,1,0.3,1)',
+      boxShadow: isDark
         ? '0 4px 20px rgba(0,0,0,0.35)'
-        : '0 4px 20px rgba(37,99,235,0.1)',
+        : '0 4px 20px rgba(106,64,48,0.08)',
     }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: ACCENT, marginBottom: 6, fontFamily: "'Inter',sans-serif", textTransform: 'uppercase', letterSpacing: 0.6 }}>
+      <p style={{
+        fontSize: 10.5, fontWeight: 700, color: t.accentDeep,
+        marginBottom: 6, fontFamily: fontStack,
+        textTransform: 'uppercase', letterSpacing: 1.2,
+      }}>
         {action}
       </p>
-      <p style={{ fontSize: 13, color: isDark ? '#CBD5E1' : '#374151', lineHeight: 1.65, marginBottom: 14, fontFamily: "'Inter',sans-serif" }}>
+      <p style={{
+        fontSize: 14, color: t.textSub, lineHeight: 1.65, marginBottom: 14,
+        fontFamily: fontStack,
+      }}>
         {message}
       </p>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={onAccept} style={{ height: 32, padding: '0 14px', borderRadius: 7, border: 'none', background: ACCENT, color: '#FFF', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Inter',sans-serif", transition: 'filter 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.12)')}
+        <button onClick={onAccept} style={{
+          height: 34, padding: '0 16px', borderRadius: 10, border: 'none',
+          background: t.accent, color: '#fff', fontSize: 12.5, fontWeight: 600,
+          cursor: 'pointer', fontFamily: fontStack,
+          boxShadow: `0 2px 8px ${t.accent}44, inset 0 1px 0 rgba(255,255,255,0.22)`,
+          transition: 'filter 0.15s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
           onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}>
           Vamos lá
         </button>
-        <button onClick={onDismiss} style={{ height: 32, padding: '0 14px', borderRadius: 7, border: `1px solid ${isDark ? '#334155' : '#BFDBFE'}`, background: 'transparent', color: isDark ? '#94A3B8' : '#374151', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'Inter',sans-serif" }}>
+        <button onClick={onDismiss} style={{
+          height: 34, padding: '0 16px', borderRadius: 10,
+          border: `1px solid ${t.border}`, background: 'transparent',
+          color: t.textSub, fontSize: 12.5, fontWeight: 500,
+          cursor: 'pointer', fontFamily: fontStack,
+        }}>
           Agora não
         </button>
       </div>

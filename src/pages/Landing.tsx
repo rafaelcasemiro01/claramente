@@ -1,5 +1,12 @@
 // src/pages/Landing.tsx
-// Claramente — Landing / Auth (re-themed: terracotta & cream)
+// ─────────────────────────────────────────────────────────────────────
+// Claramente — Landing / Auth (re-themed)
+//
+// All original auth logic preserved: login / signup / forgot / OTP,
+// password strength, email validation, Supabase calls, theme toggle.
+// Visual treatment: terracotta & cream palette, new ClaramenteLogo,
+// editorial header, breathing aura.
+// ─────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react'
 import type { CSSProperties, FocusEvent } from 'react'
@@ -13,20 +20,20 @@ type Tab = 'login' | 'signup' | 'forgot'
 type Step = 'form' | 'otp'
 
 const RULES = [
-  { label: 'Mínimo 8 caracteres',           ok: (p: string) => p.length >= 8 },
+  { label: 'Mínimo 8 caracteres',            ok: (p: string) => p.length >= 8 },
   { label: 'Uma letra maiúscula',            ok: (p: string) => /[A-Z]/.test(p) },
-  { label: 'Um número',                     ok: (p: string) => /[0-9]/.test(p) },
-  { label: 'Um caractere especial (!@#$%)', ok: (p: string) => /[!@#$%^&*]/.test(p) },
+  { label: 'Um número',                      ok: (p: string) => /[0-9]/.test(p) },
+  { label: 'Um caractere especial (!@#$%)',  ok: (p: string) => /[!@#$%^&*]/.test(p) },
 ]
 
 function pwStrength(p: string) {
   const n = RULES.filter(r => r.ok(p)).length
   return [
-    { score: 0, label: '',            color: '#E2E8F0' },
+    { score: 0, label: '',          color: '#E2E8F0' },
     { score: 1, label: 'Muito fraca', color: '#b8553f' },
-    { score: 2, label: 'Fraca',       color: '#d9a05b' },
-    { score: 3, label: 'Boa',         color: '#c4836a' },
-    { score: 4, label: 'Forte',       color: '#6b8a54' },
+    { score: 2, label: 'Fraca',     color: '#d9a05b' },
+    { score: 3, label: 'Boa',       color: '#c4836a' },
+    { score: 4, label: 'Forte',     color: '#6b8a54' },
   ][n]
 }
 
@@ -59,19 +66,19 @@ export default function Landing() {
   const { isDark, toggle } = useTheme()
   const t = useColors()
 
-  const [tab,     setTab]     = useState<Tab>('login')
-  const [step,    setStep]    = useState<Step>('form')
-  const [name,    setName]    = useState('')
-  const [email,   setEmail]   = useState('')
-  const [pw,      setPw]      = useState('')
-  const [showPw,  setShowPw]  = useState(false)
-  const [otp,     setOtp]     = useState('')
-  const [otpErr,  setOtpErr]  = useState('')
-  const [otpBusy, setOtpBusy] = useState(false)
-  const [error,   setError]   = useState('')
-  const [info,    setInfo]    = useState('')
-  const [busy,    setBusy]    = useState(false)
-  const [pwFocus, setPwFocus] = useState(false)
+  const [tab,    setTab]    = useState<Tab>('login')
+  const [step,   setStep]   = useState<Step>('form')
+  const [name,   setName]   = useState('')
+  const [email,  setEmail]  = useState('')
+  const [pw,     setPw]     = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [otp,    setOtp]    = useState('')
+  const [otpErr, setOtpErr] = useState('')
+  const [otpBusy,setOtpBusy]= useState(false)
+  const [error,  setError]  = useState('')
+  const [info,   setInfo]   = useState('')
+  const [busy,   setBusy]   = useState(false)
+  const [pwFocus,setPwFocus]= useState(false)
 
   const ev = checkEmail(email)
   const st = pwStrength(pw)
@@ -84,8 +91,9 @@ export default function Landing() {
 
   async function submit() {
     setError(''); setInfo(''); setBusy(true)
-    if (!email)  { setError('Informe seu e-mail.'); setBusy(false); return }
-    if (!ev.ok)  { setError(ev.msg || 'E-mail inválido.'); setBusy(false); return }
+    if (!email)    { setError('Informe seu e-mail.'); setBusy(false); return }
+    if (!ev.ok)    { setError(ev.msg || 'E-mail inválido.'); setBusy(false); return }
+
     try {
       if (tab === 'forgot') {
         const { error: e } = await supabase.auth.resetPasswordForEmail(email, {
@@ -120,7 +128,7 @@ export default function Landing() {
     setOtpBusy(true); setOtpErr('')
     let result = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
     if (result.error) result = await supabase.auth.verifyOtp({ email, token: otp, type: 'signup' })
-    if (result.error) setOtpErr('Código inválido ou expirado.')
+    if (result.error) setOtpErr('Código inválido ou expirado. Verifique seu e-mail e tente novamente.')
     else { setInfo('✓ Conta confirmada! Faça login.'); switchTab('login') }
     setOtpBusy(false)
   }
@@ -132,6 +140,7 @@ export default function Landing() {
     else setInfo('Novo código enviado!')
   }
 
+  // ── Reusable styles ────────────────────────────────────────────────
   const inputStyle = (extra?: CSSProperties): CSSProperties => ({
     width: '100%', height: 44, padding: '0 14px',
     border: `1px solid ${t.border}`, borderRadius: 12,
@@ -151,14 +160,16 @@ export default function Landing() {
   }
 
   return (
-    <div style={{
-      minHeight: '100dvh',
-      background: isDark
-        ? `radial-gradient(ellipse 90% 70% at 50% 110%, rgba(212,147,128,0.10) 0%, ${t.bg} 55%)`
-        : `radial-gradient(ellipse 90% 70% at 50% 110%, ${t.accentSoft} 0%, ${t.bg} 55%)`,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '36px 24px', fontFamily: fontStack, position: 'relative', overflow: 'hidden',
-    }}>
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: isDark
+          ? `radial-gradient(ellipse 90% 70% at 50% 110%, rgba(212,147,128,0.10) 0%, ${t.bg} 55%)`
+          : `radial-gradient(ellipse 90% 70% at 50% 110%, ${t.accentSoft} 0%, ${t.bg} 55%)`,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '36px 24px', fontFamily: fontStack, position: 'relative', overflow: 'hidden',
+      }}
+    >
       <style>{`
         @keyframes auraSoft { 0%,100% { transform: translateX(-50%) scale(1); opacity: 0.85 } 50% { transform: translateX(-50%) scale(1.08); opacity: 1 } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
@@ -170,6 +181,7 @@ export default function Landing() {
         .otp-input { text-align: center; letter-spacing: 10px; font-size: 24px !important; font-weight: 700 !important; }
       `}</style>
 
+      {/* Breathing aura at bottom */}
       <div style={{
         position: 'absolute', bottom: -160, left: '50%', width: 540, height: 320,
         borderRadius: '50%', filter: 'blur(24px)', pointerEvents: 'none',
@@ -177,11 +189,16 @@ export default function Landing() {
         animation: 'auraSoft 6s ease-in-out infinite',
       }}/>
 
-      <button onClick={toggle} title="Tema" style={{
-        position: 'fixed', top: 16, right: 16, width: 38, height: 38, borderRadius: 10,
-        border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10,
-      }}>
+      {/* Theme toggle */}
+      <button
+        onClick={toggle}
+        title="Tema"
+        style={{
+          position: 'fixed', top: 16, right: 16, width: 38, height: 38, borderRadius: 10,
+          border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10,
+        }}
+      >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round">
           {isDark ? (
             <>
@@ -197,12 +214,14 @@ export default function Landing() {
       </button>
 
       <div style={{ width: '100%', maxWidth: 380, position: 'relative', zIndex: 1, animation: 'fadeIn 0.4s ease' }}>
+        {/* Mascot */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
           <div style={{ filter: `drop-shadow(0 8px 16px ${t.accent}44)` }}>
             <ClaramenteLogo size={72} mode={isDark ? 'dark' : 'light'} breathing/>
           </div>
         </div>
 
+        {/* Editorial header */}
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
           <p style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: t.accentDeep, fontWeight: 600, margin: '0 0 10px' }}>
             Claramente
@@ -216,6 +235,7 @@ export default function Landing() {
           </p>
         </div>
 
+        {/* ───────── OTP step ───────── */}
         {step === 'otp' && (
           <div style={cardStyle(t, isDark)}>
             <div style={{ padding: 28, textAlign: 'center' }}>
@@ -234,6 +254,7 @@ export default function Landing() {
                 Enviamos um código de 6 dígitos para<br/>
                 <strong style={{ color: t.text }}>{email}</strong>
               </p>
+
               <input
                 className="otp-input"
                 type="text" inputMode="numeric" maxLength={6}
@@ -245,11 +266,18 @@ export default function Landing() {
                 onFocus={onFocus} onBlur={onBlur}
                 autoFocus
               />
+
               {otpErr && <Alert kind="error" t={t}>{otpErr}</Alert>}
               {info   && <Alert kind="ok"    t={t}>{info}</Alert>}
-              <button onClick={verifyOtp} disabled={otpBusy || otp.length !== 6} style={primaryBtn(t, otpBusy || otp.length !== 6)}>
+
+              <button
+                onClick={verifyOtp}
+                disabled={otpBusy || otp.length !== 6}
+                style={primaryBtn(t, otpBusy || otp.length !== 6)}
+              >
                 {otpBusy ? 'Verificando...' : 'Confirmar código'}
               </button>
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
                 <button onClick={resendOtp} style={textLink(t.accentDeep)}>Reenviar código</button>
                 <button onClick={() => { setStep('form'); setOtp(''); setOtpErr('') }} style={textLink(t.textMuted)}>← Voltar</button>
@@ -258,25 +286,31 @@ export default function Landing() {
           </div>
         )}
 
+        {/* ───────── Form step ───────── */}
         {step === 'form' && (
           <div style={cardStyle(t, isDark)}>
             {tab !== 'forgot' && (
               <div style={{ display: 'flex', padding: 6, gap: 4, background: t.surface2, borderBottom: `1px solid ${t.borderSoft}` }}>
                 {(['login', 'signup'] as Tab[]).map(k => (
-                  <button key={k} onClick={() => switchTab(k)} style={{
-                    flex: 1, height: 36, border: 'none', cursor: 'pointer',
-                    borderRadius: 10, fontFamily: fontStack, fontSize: 13,
-                    fontWeight: tab === k ? 600 : 500,
-                    color: tab === k ? t.text : t.textMuted,
-                    background: tab === k ? t.surface : 'transparent',
-                    boxShadow: tab === k ? (isDark ? '0 1px 3px rgba(0,0,0,0.3)' : '0 1px 3px rgba(106,64,48,0.08)') : 'none',
-                    transition: 'all 0.15s',
-                  }}>
+                  <button
+                    key={k}
+                    onClick={() => switchTab(k)}
+                    style={{
+                      flex: 1, height: 36, border: 'none', cursor: 'pointer',
+                      borderRadius: 10, fontFamily: fontStack, fontSize: 13,
+                      fontWeight: tab === k ? 600 : 500,
+                      color: tab === k ? t.text : t.textMuted,
+                      background: tab === k ? t.surface : 'transparent',
+                      boxShadow: tab === k ? (isDark ? '0 1px 3px rgba(0,0,0,0.3)' : '0 1px 3px rgba(106,64,48,0.08)') : 'none',
+                      transition: 'all 0.15s',
+                    }}
+                  >
                     {k === 'login' ? 'Entrar' : 'Criar conta'}
                   </button>
                 ))}
               </div>
             )}
+
             <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {tab === 'forgot' && (
                 <div>
@@ -290,11 +324,13 @@ export default function Landing() {
                   <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.6 }}>Enviaremos um link de redefinição.</p>
                 </div>
               )}
+
               {tab === 'signup' && (
                 <Field label="Nome" t={t}>
                   <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Como gostaria de ser chamado?" style={inputStyle()} onFocus={onFocus} onBlur={onBlur}/>
                 </Field>
               )}
+
               <Field label="E-mail" t={t}>
                 <input
                   type="email" value={email}
@@ -308,6 +344,7 @@ export default function Landing() {
                   <p style={{ fontSize: 11, color: t.danger, marginTop: 4 }}>{ev.msg}</p>
                 )}
               </Field>
+
               {tab !== 'forgot' && (
                 <Field label="Senha" t={t} right={tab === 'login' && (
                   <button onClick={() => switchTab('forgot')} style={textLink(t.accentDeep)}>Esqueceu?</button>
@@ -322,19 +359,31 @@ export default function Landing() {
                       placeholder={tab === 'signup' ? 'Crie uma senha forte' : '••••••••'}
                       style={inputStyle({ paddingRight: 42 })}
                     />
-                    <button onClick={() => setShowPw(p => !p)} style={{
-                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted,
-                      display: 'flex', padding: 4, borderRadius: 4,
-                    }}>
+                    <button
+                      onClick={() => setShowPw(p => !p)}
+                      style={{
+                        position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer', color: t.textMuted,
+                        display: 'flex', padding: 4, borderRadius: 4,
+                      }}
+                    >
                       <EyeIcon open={showPw}/>
                     </button>
                   </div>
+
                   {tab === 'signup' && pwFocus && pw.length > 0 && (
-                    <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: isDark ? t.surface2 : '#fbf6ec', border: `1px solid ${t.borderSoft}` }}>
+                    <div style={{
+                      marginTop: 10, padding: 12, borderRadius: 10,
+                      background: isDark ? t.surface2 : '#fbf6ec',
+                      border: `1px solid ${t.borderSoft}`,
+                    }}>
                       <div style={{ display: 'flex', gap: 3, marginBottom: 6 }}>
                         {[1, 2, 3, 4].map(i => (
-                          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= st.score ? st.color : (isDark ? t.border : '#e7dac4'), transition: 'background 0.2s' }}/>
+                          <div key={i} style={{
+                            flex: 1, height: 3, borderRadius: 2,
+                            background: i <= st.score ? st.color : (isDark ? t.border : '#e7dac4'),
+                            transition: 'background 0.2s',
+                          }}/>
                         ))}
                       </div>
                       {st.label && <p style={{ fontSize: 11, fontWeight: 500, color: st.color, marginBottom: 8 }}>{st.label}</p>}
@@ -348,7 +397,11 @@ export default function Landing() {
                               border: `1px solid ${ok ? t.success : t.border}`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              {ok && <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke={t.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              {ok && (
+                                <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                                  <polyline points="2,6 5,9 10,3" stroke={t.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
                             </div>
                             <span style={{ fontSize: 11, color: ok ? t.success : t.textMuted }}>{r.label}</span>
                           </div>
@@ -358,10 +411,14 @@ export default function Landing() {
                   )}
                 </Field>
               )}
+
               {error && <Alert kind="error" t={t}>{error}</Alert>}
               {info  && <Alert kind="ok"    t={t}>{info}</Alert>}
+
               <button
-                onClick={submit} disabled={busy} style={primaryBtn(t, busy)}
+                onClick={submit}
+                disabled={busy}
+                style={primaryBtn(t, busy)}
                 onMouseEnter={e => { if (!busy) e.currentTarget.style.filter = 'brightness(1.08)' }}
                 onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)' }}
               >
@@ -381,11 +438,15 @@ export default function Landing() {
   )
 }
 
+// ── Small reusable bits ─────────────────────────────────────────────
 type T = ReturnType<typeof useColors>
 
 function cardStyle(t: T, isDark: boolean): CSSProperties {
   return {
-    background: t.surface, border: `1px solid ${t.border}`, borderRadius: 20, overflow: 'hidden',
+    background: t.surface,
+    border: `1px solid ${t.border}`,
+    borderRadius: 20,
+    overflow: 'hidden',
     boxShadow: isDark
       ? '0 16px 44px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.2)'
       : '0 1px 0 rgba(255,255,255,0.7) inset, 0 16px 44px rgba(106,64,48,0.10), 0 2px 8px rgba(106,64,48,0.04)',
@@ -398,13 +459,17 @@ function primaryBtn(t: T, disabled: boolean): CSSProperties {
     background: disabled ? t.accentSoft : t.accent,
     color: disabled ? t.accent : '#fff',
     fontSize: 14.5, fontWeight: 600, fontFamily: fontStack, letterSpacing: 0.1,
-    cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.15s', marginTop: 4,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.15s', marginTop: 4,
     boxShadow: disabled ? 'none' : `0 4px 14px ${t.accent}55, inset 0 1px 0 rgba(255,255,255,0.22)`,
   }
 }
 
 function textLink(color: string): CSSProperties {
-  return { background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color, fontFamily: fontStack, padding: 0 }
+  return {
+    background: 'none', border: 'none', cursor: 'pointer',
+    fontSize: 12, fontWeight: 500, color, fontFamily: fontStack, padding: 0,
+  }
 }
 
 function Field({ label, children, t, right }: { label: string; children: React.ReactNode; t: T; right?: React.ReactNode }) {

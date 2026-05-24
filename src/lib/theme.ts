@@ -1,6 +1,8 @@
 // src/lib/theme.ts
+// ─────────────────────────────────────────────────────────────────────
 // Claramente — color tokens (terracotta & cream)
 // Single source of truth. Use `useColors()` in any component.
+// ─────────────────────────────────────────────────────────────────────
 
 import { useTheme } from '@/contexts/ThemeContext'
 
