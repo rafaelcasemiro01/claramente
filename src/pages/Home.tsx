@@ -23,6 +23,8 @@ import { emotionEngine } from '@/lib/emotionEngine'
 import { ProactiveCard } from '@/components/ProactiveCard'
 import { ClaramenteLogo } from '@/components/Logo'
 import { UserNav } from '@/components/UserNav'
+import { MobileBottomNav } from '@/components/MobileNav'
+import { OnboardingModal } from '@/components/OnboardingModal'
 import {
   Send, Plus, Sparkle, Volume, VolumeOff,
   BarChart, Person, LogOut, Sun, Moon, Menu,
@@ -170,6 +172,10 @@ export default function Home() {
     .sb { display: none !important; height: 100%; }
     .mhd { display: flex; }
     @media (min-width: 768px) { .sb { display: flex !important } .mhd { display: none !important } }
+    .bnv { padding-bottom: 60px; }
+    @media (min-width: 768px) { .bnv { padding-bottom: 0; } }
+    .mobnav { display: flex; }
+    @media (min-width: 768px) { .mobnav { display: none !important; } }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: ${isDark ? 'rgba(196,131,106,0.22)' : 'rgba(160,101,73,0.18)'}; border-radius: 4px; }
     textarea { -webkit-appearance: none; font-family: 'Inter', sans-serif; }
@@ -350,7 +356,7 @@ export default function Home() {
         </>
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }} className="bnv">
 
         {/* Mobile header */}
         <header className="mhd" style={{
@@ -358,7 +364,24 @@ export default function Home() {
           height: 52, padding: '0 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
         }}>
-          <UserNav isDark={isDark}/>
+          {/* Avatar → perfil */}
+          <button
+            onClick={() => navigate('/perfil')}
+            aria-label="Ir para o perfil"
+            style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: t.accent,
+              border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', flexShrink: 0,
+              color: '#faf6f0', fontSize: 12, fontWeight: 600,
+            }}
+          >
+            {profile?.name
+              ? profile.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+              : '?'
+            }
+          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ClaramenteLogo size={24} mode={mode}/>
             <span style={{ fontSize: 15, fontWeight: 700, color: t.text }}>
@@ -611,6 +634,13 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Bottom navigation — mobile only */}
+      <div className="mobnav"><MobileBottomNav/></div>
+
+      {/* Onboarding modal — aparece uma vez após o login */}
+      <OnboardingModal/>
+
     </div>
   )
 }
