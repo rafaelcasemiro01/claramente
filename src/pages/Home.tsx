@@ -23,7 +23,6 @@ import { emotionEngine } from '@/lib/emotionEngine'
 import { ProactiveCard } from '@/components/ProactiveCard'
 import { ClaramenteLogo } from '@/components/Logo'
 import { UserNav } from '@/components/UserNav'
-import { MobileBottomNav } from '@/components/MobileNav'
 import { OnboardingModal } from '@/components/OnboardingModal'
 import {
   Send, Plus, Sparkle, Volume, VolumeOff,
@@ -172,10 +171,6 @@ export default function Home() {
     .sb { display: none !important; height: 100%; }
     .mhd { display: flex; }
     @media (min-width: 768px) { .sb { display: flex !important } .mhd { display: none !important } }
-    .bnv { padding-bottom: 60px; }
-    @media (min-width: 768px) { .bnv { padding-bottom: 0; } }
-    .mobnav { display: flex; }
-    @media (min-width: 768px) { .mobnav { display: none !important; } }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: ${isDark ? 'rgba(196,131,106,0.22)' : 'rgba(160,101,73,0.18)'}; border-radius: 4px; }
     textarea { -webkit-appearance: none; font-family: 'Inter', sans-serif; }
@@ -359,7 +354,7 @@ export default function Home() {
         </>
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }} className="bnv">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
 
         {/* Mobile header */}
         <header className="mhd" style={{
@@ -670,7 +665,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className="mobnav"><MobileBottomNav/></div>
       <OnboardingModal/>
     </div>
   )
