@@ -193,12 +193,30 @@ export default function Home() {
         <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${t.borderSoft}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <ClaramenteLogo size={32} mode={mode}/>
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: 14, fontWeight: 600, color: t.text, margin: 0, letterSpacing: -0.2, lineHeight: 1.2 }}>Claramente</p>
               <p style={{ fontSize: 11, color: t.accentDeep, margin: 0, fontStyle: 'italic', opacity: 0.85, lineHeight: 1.2, marginTop: 2 }}>
                 Sua mente em equilíbrio.
               </p>
             </div>
+            {/* Avatar → perfil (estilo GitHub) */}
+            <button
+              onClick={() => navigate('/perfil')}
+              title="Meu perfil"
+              style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: t.accent, border: `2px solid ${t.accentBorder}`,
+                cursor: 'pointer', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#faf6f0', fontSize: 12, fontWeight: 700,
+                transition: 'border-color 0.15s, transform 0.15s',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.transform = 'scale(1.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = t.accentBorder; e.currentTarget.style.transform = 'scale(1)' }}
+            >
+              {firstName.charAt(0).toUpperCase()}
+            </button>
           </div>
 
           <button
