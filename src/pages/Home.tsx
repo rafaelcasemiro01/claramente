@@ -359,8 +359,8 @@ export default function Home() {
         {/* Left: hamburger + avatar (home) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
-            onClick={() => setSidebarOpen(true)}
-            title="Abrir menu"
+            onClick={() => setSidebarOpen(o => !o)}
+            title={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
             style={{
               width: 36, height: 36, borderRadius: 10,
               border: `1px solid ${t.border}`,
@@ -394,7 +394,7 @@ export default function Home() {
             flexShrink: 0,
           }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.accent, animation: 'pulseB 2.4s ease-in-out infinite' }}/>
-            <span style={{ fontSize: 11, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.4 }}>sereno</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.4 }}>Claramente</span>
           </div>
         </div>
 
@@ -475,7 +475,7 @@ export default function Home() {
 
               {greetDone && (
                 <div style={{
-                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10,
+                  display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10,
                   marginTop: 22, width: '100%', animation: 'fIn 0.4s ease 0.1s both',
                 }}>
                   <ActionCard title="Journaling guiado" subtitle="Sessão reflexiva profunda" t={t} accent onClick={() => { audio.init(); journal() }}/>
