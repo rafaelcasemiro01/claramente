@@ -1,169 +1,181 @@
-type ResultCallback = (text: string, isFinal: boolean) => void
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/lib/speechEngine.ts
+// ─────────────────────────────────────────────────────────────────────
+// Síntese de voz do Claramente.
+// Personalidade: formal, calorosa e fluida — inspirada em C-3PO mas
+// em português brasileiro. Frases inteiras sem cortes, ritmo natural.
+//
+// API estável (compatível com o restante do app):
+//   speechEngine.speak(text, { rate?, pitch?, voice? })
+//   speechEngine.speakWelcome(name)
+//   speechEngine.speakAck(name)
+//   speechEngine.speakJournalingStart()
+//   speechEngine.stop()
+//   speechEngine.setMuted(muted)
+//   speechEngine.isSupported
+// ─────────────────────────────────────────────────────────────────────
 
-const isMobile = typeof navigator !== 'undefined' &&
-  /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+interface SpeakOpts {
+  rate?: number
+  pitch?: number
+  volume?: number
+  voice?: SpeechSynthesisVoice
+}
 
 class SpeechEngine {
-  private synth: SpeechSynthesis | null = null
-  private recog: any = null
-  private muted   = false
-  private voice:  SpeechSynthesisVoice | null = null
-  private queue:  { text: string; rate: number; pitch: number }[] = []
-  private busy    = false
-  private shouldRestart = false
-  private currentOnEnd:  (() => void) | null = null
-  private currentOnResult: ResultCallback | null = null
+  private synth: SpeechSynthesis | null
+  private voice: SpeechSynthesisVoice | null = null
+  private muted = false
+  private currentUtterance: SpeechSynthesisUtterance | null = null
+  private voiceReady = false
+  private voicePromise: Promise<void>
+
+  /** Personalidade C-3PO: pitch ligeiramente elevado, ritmo claro. */
+  private readonly basePitch = 1.08
+  private readonly baseRate  = 0.97
 
   constructor() {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-    this.synth = window.speechSynthesis
-    const load = () => {
+    this.synth = typeof window !== 'undefined' ? window.speechSynthesis : null
+    this.voicePromise = this.loadVoices()
+  }
+
+  get isSupported(): boolean {
+    return !!this.synth
+  }
+
+  private async loadVoices(): Promise<void> {
+    if (!this.synth) return
+
+    const pickBestVoice = () => {
       const voices = this.synth!.getVoices()
+      if (voices.length === 0) return false
+
+      // Prioridade (ordem de qualidade percebida e adequação ao personagem):
+      //  1. Microsoft Daniel pt-BR (Windows — masculino, claro)
+      //  2. Microsoft Antonio (pt-BR, masculino)
+      //  3. Google português do Brasil (geralmente masculino)
+      //  4. Qualquer pt-BR masculino
+      //  5. Qualquer pt-BR
+      //  6. Qualquer pt
+      const ptBr = voices.filter(v => v.lang === 'pt-BR' || v.lang.startsWith('pt-BR'))
+      const pt   = voices.filter(v => v.lang.startsWith('pt'))
+
+      const malePreferred = [
+        /daniel/i, /antonio/i, /ricardo/i, /felipe/i, /paulo/i, /joão/i,
+        /male/i, /masculin/i,
+      ]
+      const isMale = (v: SpeechSynthesisVoice) =>
+        malePreferred.some(rx => rx.test(v.name))
+
       this.voice =
-        voices.find(v => v.lang === 'pt-BR' && v.name.toLowerCase().includes('google')) ||
-        voices.find(v => v.lang === 'pt-BR' && !v.localService) ||
-        voices.find(v => v.lang === 'pt-BR') ||
-        voices.find(v => v.lang.startsWith('pt')) ||
-        voices.find(v => v.default) || voices[0] || null
+        ptBr.find(isMale)
+        || pt.find(isMale)
+        || ptBr.find(v => /google/i.test(v.name))
+        || ptBr[0]
+        || pt[0]
+        || voices[0]
+        || null
+
+      this.voiceReady = true
+      return true
     }
-    load()
-    this.synth.onvoiceschanged = load
+
+    if (pickBestVoice()) return
+
+    // Em alguns browsers as vozes carregam de forma assíncrona.
+    return new Promise<void>(resolve => {
+      const handler = () => {
+        if (pickBestVoice()) {
+          this.synth!.removeEventListener('voiceschanged', handler)
+          resolve()
+        }
+      }
+      this.synth!.addEventListener('voiceschanged', handler)
+      // Fallback após 3s
+      setTimeout(() => { pickBestVoice(); resolve() }, 3000)
+    })
   }
 
-  setMuted(v: boolean) { this.muted = v; if (v) this.stopAll() }
-  isMuted()    { return this.muted }
-  isSpeaking() { return this.busy || (this.synth?.speaking ?? false) }
-
-  private stopAll() {
-    this.synth?.cancel(); this.queue = []; this.busy = false
-  }
-  stop() { this.stopAll() }
-
-  private clean(text: string): string {
+  /** Pre-processa o texto pra fluir melhor: remove emojis, normaliza pausas. */
+  private prepareText(text: string): string {
     return text
-      .replace(/\[META\].*?\[\/META\]/gs, '')
-      .replace(/\[CRISE\]/g, '')
-      .replace(/[*_#`✦]/g, '')
-      .replace(/\n{2,}/g, '. ')
-      .replace(/\n/g, ', ')
-      .replace(/\s{2,}/g, ' ')
+      // Remove emojis (atrapalham TTS)
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+      // Reduz reticências múltiplas (que viram pausas longas)
+      .replace(/\.{3,}/g, '.')
+      // Quebras de linha → vírgula (mantém ritmo sem pausa cheia)
+      .replace(/\n+/g, ', ')
+      // Espaços extras
+      .replace(/\s+/g, ' ')
       .trim()
   }
 
-  private sentences(text: string): string[] {
-    return text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 2)
+  /**
+   * Fala um texto em UM ÚNICO bloco (sem chunking).
+   * Garante fluidez e ritmo natural sem cortes mecânicos.
+   */
+  async speak(text: string, opts: SpeakOpts = {}): Promise<void> {
+    if (!this.synth || this.muted || !text.trim()) return
+
+    // Espera as vozes carregarem se ainda não carregaram
+    if (!this.voiceReady) await this.voicePromise
+
+    // Cancela qualquer fala em andamento
+    this.stop()
+
+    const utterance = new SpeechSynthesisUtterance(this.prepareText(text))
+    utterance.lang   = 'pt-BR'
+    utterance.voice  = opts.voice ?? this.voice ?? null
+    utterance.rate   = opts.rate   ?? this.baseRate
+    utterance.pitch  = opts.pitch  ?? this.basePitch
+    utterance.volume = opts.volume ?? 1
+
+    this.currentUtterance = utterance
+
+    return new Promise(resolve => {
+      utterance.onend   = () => { this.currentUtterance = null; resolve() }
+      utterance.onerror = () => { this.currentUtterance = null; resolve() }
+      this.synth!.speak(utterance)
+    })
   }
 
-  private utterance(text: string, rate: number, pitch: number): SpeechSynthesisUtterance {
-    const u = new SpeechSynthesisUtterance(text.slice(0, 300))
-    if (this.voice) u.voice = this.voice
-    u.lang = 'pt-BR'; u.rate = rate; u.pitch = pitch; u.volume = 0.9
-    return u
+  speakWelcome(name: string) {
+    return this.speak(`Olá, ${name}. É um prazer ver você por aqui.`)
   }
 
-  private processQueue() {
-    if (this.muted || !this.synth || this.queue.length === 0) { this.busy = false; return }
-    this.busy = true
-    const { text, rate, pitch } = this.queue.shift()!
-    const u = this.utterance(text, rate, pitch)
-    u.onend   = () => setTimeout(() => this.processQueue(), 80)
-    u.onerror = () => setTimeout(() => this.processQueue(), 80)
-    // iOS workaround: resume if suspended
-    if (this.synth.paused) this.synth.resume()
-    this.synth.speak(u)
-  }
-
-  speak(text: string, opts: { priority?: boolean; rate?: number; pitch?: number } = {}) {
-    if (this.muted || !this.synth) return
-    if (opts.priority) this.stopAll()
-    const cleaned = this.clean(text); if (cleaned.length < 2) return
-    const rate = opts.rate ?? 1.05, pitch = opts.pitch ?? 0.92
-    this.sentences(cleaned).forEach(s => this.queue.push({ text: s, rate, pitch }))
-    if (!this.busy) this.processQueue()
-  }
-
-  speakWelcome(name?: string) {
-    this.speak(
-      name ? `Bem-vindo de volta, ${name}. Sistemas de introspecção online. Como posso ajudá-lo hoje?`
-           : 'Bem-vindo ao Claramente. Todos os sistemas estão operacionais.',
-      { priority: true, rate: 0.95, pitch: 0.92 }
-    )
-  }
-
-  speakAck(name?: string) {
-    const opts = ['Processando.', 'Entendido.', 'Compreendo.', name ? `Certo, ${name}.` : 'Certo.']
-    if (!this.busy && !this.synth?.speaking) {
-      this.speak(opts[Math.floor(Math.random() * opts.length)], { rate: 1.08, pitch: 0.92 })
-    }
+  speakAck(name: string) {
+    // Curto e fluido — só para indicar que ouvimos a mensagem.
+    const variants = [
+      `Estou ouvindo, ${name}.`,
+      `Entendi, ${name}.`,
+      `Pode continuar, ${name}.`,
+    ]
+    return this.speak(variants[Math.floor(Math.random() * variants.length)])
   }
 
   speakJournalingStart() {
-    this.speak('Iniciando sessão de journaling guiado. Vou conduzir você por uma jornada interior.', { priority: true, rate: 0.94, pitch: 0.90 })
+    return this.speak(
+      'Vamos começar uma sessão de journaling. Respire fundo e me conte o que está no seu coração agora.'
+    )
   }
 
-  // ── Mobile-compatible recording ──────────────────────────────
-  get isRecordingSupported(): boolean {
-    return typeof window !== 'undefined' &&
-      !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-  }
-
-  startRecording(onResult: ResultCallback, onEnd: () => void): boolean {
-    if (typeof window === 'undefined') return false
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SR) return false
-
-    this.stopAll()
-    this.shouldRestart     = true
-    this.currentOnEnd      = onEnd
-    this.currentOnResult   = onResult
-
-    this.recog = new SR()
-    this.recog.lang             = 'pt-BR'
-    this.recog.continuous       = !isMobile   // iOS doesn't support continuous
-    this.recog.interimResults   = true
-    this.recog.maxAlternatives  = 1
-
-    this.recog.onresult = (e: any) => {
-      let interim = '', final = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const txt = e.results[i][0].transcript
-        if (e.results[i].isFinal) final += txt
-        else interim += txt
-      }
-      onResult(final || interim, !!final)
-      // On mobile: auto-restart after final result
-      if (isMobile && final) {
-        try { this.recog?.stop() } catch { /* ignore */ }
-      }
+  /** Cancela qualquer fala em andamento. */
+  stop() {
+    if (!this.synth) return
+    try {
+      this.synth.cancel()
+    } catch {
+      // ignora
     }
-
-    this.recog.onerror = (e: any) => {
-      if (e.error === 'no-speech' && isMobile && this.shouldRestart) {
-        // Restart on mobile for no-speech
-        try { setTimeout(() => this.recog?.start(), 100) } catch { /* ignore */ }
-        return
-      }
-      this.shouldRestart = false; onEnd()
-    }
-
-    this.recog.onend = () => {
-      if (this.shouldRestart && isMobile) {
-        try { setTimeout(() => this.recog?.start(), 150) } catch { onEnd() }
-      } else {
-        onEnd()
-      }
-    }
-
-    try { this.recog.start(); return true }
-    catch { this.shouldRestart = false; return false }
+    this.currentUtterance = null
   }
 
-  stopRecording() {
-    this.shouldRestart = false
-    try { this.recog?.stop() } catch { /* ignore */ }
-    this.recog = null
+  /** Mudo total — pausa o que está tocando e silencia falas futuras. */
+  setMuted(muted: boolean) {
+    this.muted = muted
+    if (muted) this.stop()
   }
+
+  get isMuted() { return this.muted }
 }
 
 export const speechEngine = new SpeechEngine()
