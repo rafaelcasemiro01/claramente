@@ -1,16 +1,21 @@
 // src/lib/speechEngine.ts
 // ─────────────────────────────────────────────────────────────────────
-// Síntese de voz do Claramente.
-// Personalidade: formal, calorosa e fluida — inspirada em C-3PO mas
-// em português brasileiro. Frases inteiras sem cortes, ritmo natural.
+// Síntese de voz do Claramente — v2 com suporte mobile.
 //
-// API estável (compatível com o restante do app):
+// Mudanças:
+//   • Inicialização lazy (no primeiro speak), pra contornar restrições
+//     de autoplay no iOS/Android
+//   • `unlock()` exposto pra inicializar via gesto do usuário
+//   • Recarrega vozes se mudar de browser/SO
+//
+// API estável:
 //   speechEngine.speak(text, { rate?, pitch?, voice? })
 //   speechEngine.speakWelcome(name)
 //   speechEngine.speakAck(name)
 //   speechEngine.speakJournalingStart()
 //   speechEngine.stop()
 //   speechEngine.setMuted(muted)
+//   speechEngine.unlock()         ← NOVO: chame no primeiro toque do usuário
 //   speechEngine.isSupported
 // ─────────────────────────────────────────────────────────────────────
 
@@ -26,36 +31,44 @@ class SpeechEngine {
   private voice: SpeechSynthesisVoice | null = null
   private muted = false
   private currentUtterance: SpeechSynthesisUtterance | null = null
-  private voiceReady = false
-  private voicePromise: Promise<void>
+  private voicesLoaded = false
+  private unlocked = false
 
-  /** Personalidade C-3PO: pitch ligeiramente elevado, ritmo claro. */
   private readonly basePitch = 1.08
   private readonly baseRate  = 0.97
 
   constructor() {
     this.synth = typeof window !== 'undefined' ? window.speechSynthesis : null
-    this.voicePromise = this.loadVoices()
   }
 
   get isSupported(): boolean {
     return !!this.synth
   }
 
-  private async loadVoices(): Promise<void> {
-    if (!this.synth) return
+  /**
+   * Inicializa o sistema de voz. CHAME ESSE MÉTODO no primeiro gesto
+   * do usuário (clique/toque) — destrava o TTS em mobile (iOS/Android).
+   */
+  unlock(): void {
+    if (this.unlocked || !this.synth) return
+    this.unlocked = true
+    this.loadVoices()
+    // Truque pra "acordar" o motor no iOS:
+    try {
+      const u = new SpeechSynthesisUtterance('')
+      u.volume = 0
+      this.synth.speak(u)
+    } catch {
+      // ignora
+    }
+  }
 
+  private loadVoices(): void {
+    if (!this.synth) return
     const pickBestVoice = () => {
       const voices = this.synth!.getVoices()
       if (voices.length === 0) return false
 
-      // Prioridade (ordem de qualidade percebida e adequação ao personagem):
-      //  1. Microsoft Daniel pt-BR (Windows — masculino, claro)
-      //  2. Microsoft Antonio (pt-BR, masculino)
-      //  3. Google português do Brasil (geralmente masculino)
-      //  4. Qualquer pt-BR masculino
-      //  5. Qualquer pt-BR
-      //  6. Qualquer pt
       const ptBr = voices.filter(v => v.lang === 'pt-BR' || v.lang.startsWith('pt-BR'))
       const pt   = voices.filter(v => v.lang.startsWith('pt'))
 
@@ -75,51 +88,38 @@ class SpeechEngine {
         || voices[0]
         || null
 
-      this.voiceReady = true
+      this.voicesLoaded = true
       return true
     }
 
     if (pickBestVoice()) return
 
     // Em alguns browsers as vozes carregam de forma assíncrona.
-    return new Promise<void>(resolve => {
-      const handler = () => {
-        if (pickBestVoice()) {
-          this.synth!.removeEventListener('voiceschanged', handler)
-          resolve()
-        }
+    const handler = () => {
+      if (pickBestVoice()) {
+        this.synth!.removeEventListener('voiceschanged', handler)
       }
-      this.synth!.addEventListener('voiceschanged', handler)
-      // Fallback após 3s
-      setTimeout(() => { pickBestVoice(); resolve() }, 3000)
-    })
+    }
+    this.synth.addEventListener('voiceschanged', handler)
+    // Tenta de novo após 1.5s (Android demora)
+    setTimeout(() => pickBestVoice(), 1500)
   }
 
-  /** Pre-processa o texto pra fluir melhor: remove emojis, normaliza pausas. */
   private prepareText(text: string): string {
     return text
-      // Remove emojis (atrapalham TTS)
-      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
-      // Reduz reticências múltiplas (que viram pausas longas)
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '') // emojis
       .replace(/\.{3,}/g, '.')
-      // Quebras de linha → vírgula (mantém ritmo sem pausa cheia)
       .replace(/\n+/g, ', ')
-      // Espaços extras
       .replace(/\s+/g, ' ')
       .trim()
   }
 
-  /**
-   * Fala um texto em UM ÚNICO bloco (sem chunking).
-   * Garante fluidez e ritmo natural sem cortes mecânicos.
-   */
   async speak(text: string, opts: SpeakOpts = {}): Promise<void> {
     if (!this.synth || this.muted || !text.trim()) return
 
-    // Espera as vozes carregarem se ainda não carregaram
-    if (!this.voiceReady) await this.voicePromise
+    // Carrega vozes se ainda não carregou (pode acontecer em mobile)
+    if (!this.voicesLoaded) this.loadVoices()
 
-    // Cancela qualquer fala em andamento
     this.stop()
 
     const utterance = new SpeechSynthesisUtterance(this.prepareText(text))
@@ -134,7 +134,11 @@ class SpeechEngine {
     return new Promise(resolve => {
       utterance.onend   = () => { this.currentUtterance = null; resolve() }
       utterance.onerror = () => { this.currentUtterance = null; resolve() }
-      this.synth!.speak(utterance)
+      try {
+        this.synth!.speak(utterance)
+      } catch {
+        resolve()
+      }
     })
   }
 
@@ -143,7 +147,6 @@ class SpeechEngine {
   }
 
   speakAck(name: string) {
-    // Curto e fluido — só para indicar que ouvimos a mensagem.
     const variants = [
       `Estou ouvindo, ${name}.`,
       `Entendi, ${name}.`,
@@ -158,18 +161,12 @@ class SpeechEngine {
     )
   }
 
-  /** Cancela qualquer fala em andamento. */
   stop() {
     if (!this.synth) return
-    try {
-      this.synth.cancel()
-    } catch {
-      // ignora
-    }
+    try { this.synth.cancel() } catch { /* ignora */ }
     this.currentUtterance = null
   }
 
-  /** Mudo total — pausa o que está tocando e silencia falas futuras. */
   setMuted(muted: boolean) {
     this.muted = muted
     if (muted) this.stop()

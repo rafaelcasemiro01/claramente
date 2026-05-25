@@ -116,13 +116,13 @@ export default function Home() {
   }, [voice.transcript, voice.isListening])
 
   function toggleVoice() {
+    speechEngine.unlock() // destrava TTS no mobile no primeiro toque
     if (!voice.isSupported) {
-      alert('Seu navegador não suporta gravação de voz. Tente o Chrome ou Edge.')
+      // Mantém no input.error — será exibido no rodapé
       return
     }
     if (voice.isListening) {
       voice.stop()
-      // Mantém o transcript no input para o usuário revisar e enviar
     } else {
       audio.init()
       speechEngine.stop()
@@ -184,6 +184,7 @@ export default function Home() {
     const txt = input.trim(); setInput('')
     if (taRef.current) taRef.current.style.height = 'auto'
     audio.init(); audio.playMessageSent(); speechEngine.speakAck(firstName)
+    speechEngine.unlock() // destrava TTS no mobile no primeiro gesto
     await sendMessage(txt)
   }
 
@@ -695,14 +696,16 @@ export default function Home() {
               <Send size={15} color={isTyping || !input.trim() ? t.textMuted : '#fff'}/>
             </button>
           </div>
-          <p style={{ textAlign: 'center', fontSize: 11, color: t.textMuted, marginTop: 8, letterSpacing: 0.2 }}>
+          <p style={{ textAlign: 'center', fontSize: 11, color: voice.error ? t.danger : t.textMuted, marginTop: 8, letterSpacing: 0.2 }}>
             {voice.isListening
               ? 'Pode falar... toque no microfone para parar.'
               : voice.error
                 ? voice.error
-                : (isJournalingMode
-                  ? 'Sessão de journaling guiado ativa'
-                  : 'Claramente não substitui acompanhamento psicológico · CVV: 188')}
+                : (!voice.isSupported && voice.unsupportedReason)
+                  ? voice.unsupportedReason
+                  : (isJournalingMode
+                    ? 'Sessão de journaling guiado ativa'
+                    : 'Claramente não substitui acompanhamento psicológico · CVV: 188')}
           </p>
         </div>
       </div>

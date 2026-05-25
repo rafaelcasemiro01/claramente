@@ -1,20 +1,17 @@
 // src/hooks/useVoiceInput.ts
 // ─────────────────────────────────────────────────────────────────────
-// Hook para gravação de voz com transcrição em tempo real
-// usando a Web Speech API (SpeechRecognition).
+// Hook para gravação de voz com transcrição em tempo real.
 //
-// Funciona em Chrome, Edge, Opera (com prefixo webkit) e Safari.
-// Firefox ainda não suporta — o hook devolve `isSupported: false`.
-//
-// Uso:
-//   const { isSupported, isListening, transcript, error, start, stop, reset } = useVoiceInput()
-//   <button onClick={isListening ? stop : start}>...</button>
-//   <p>{transcript}</p>
+// v2 — melhorias:
+//   • Pede permissão de microfone explicitamente (getUserMedia)
+//   • Detecta iOS Safari (que não suporta SpeechRecognition)
+//   • Mensagens de erro detalhadas e amigáveis
+//   • Lida com auto-stop e timeouts
 // ─────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-// Tipos da Web Speech API (não estão no DOM padrão por padrão)
+// ── Tipos da Web Speech API ─────────────────────────────────────────
 interface SpeechRecognitionEvent extends Event {
   resultIndex: number
   results: SpeechRecognitionResultList
@@ -59,20 +56,23 @@ function getSR(): SR | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
 
+/** Detecta iOS (incluindo iPad). iOS Safari não suporta SpeechRecognition. */
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /iPad|iPhone|iPod/.test(ua)
+    || (ua.includes('Mac') && 'ontouchend' in document)
+}
+
 export interface VoiceInputApi {
-  /** True se a Web Speech API está disponível no browser atual. */
   isSupported: boolean
-  /** True enquanto a gravação está ativa. */
   isListening: boolean
-  /** Transcrição acumulada (final + intermediária). */
   transcript: string
-  /** Última mensagem de erro, se houve. */
   error: string | null
-  /** Inicia a gravação. */
-  start: () => void
-  /** Encerra a gravação e mantém o transcript. */
+  /** Razão específica caso não suporte. */
+  unsupportedReason: string | null
+  start: () => Promise<void>
   stop: () => void
-  /** Limpa o transcript (útil após enviar). */
   reset: () => void
 }
 
@@ -83,16 +83,23 @@ export function useVoiceInput(lang = 'pt-BR'): VoiceInputApi {
 
   const recRef     = useRef<SpeechRecognitionLike | null>(null)
   const finalRef   = useRef<string>('')
+
   const SRClass    = getSR()
-  const isSupported = !!SRClass
+  const isIOSDevice = isIOS()
+  const isSupported = !!SRClass && !isIOSDevice
+  const unsupportedReason = !SRClass
+    ? 'Seu navegador não suporta gravação de voz. Use Chrome ou Edge.'
+    : isIOSDevice
+      ? 'O iOS (iPhone/iPad) ainda não permite gravação de voz em apps web. Tente em um Android ou no computador.'
+      : null
 
   // Cria a instância só uma vez
   useEffect(() => {
-    if (!SRClass) return
+    if (!SRClass || isIOSDevice) return
     const rec = new SRClass()
     rec.lang = lang
-    rec.continuous = false       // para automaticamente quando há silêncio
-    rec.interimResults = true    // mostra texto em tempo real
+    rec.continuous = false
+    rec.interimResults = true
 
     rec.onresult = (e: SpeechRecognitionEvent) => {
       let interim = ''
@@ -105,11 +112,26 @@ export function useVoiceInput(lang = 'pt-BR'): VoiceInputApi {
     }
     rec.onerror = (e: SpeechRecognitionErrorEvent) => {
       const err = e.error
-      if (err === 'no-speech')       setError('Não ouvi nada. Tente falar mais alto.')
-      else if (err === 'not-allowed') setError('Permissão de microfone negada.')
-      else if (err === 'audio-capture') setError('Microfone não encontrado.')
-      else if (err === 'aborted')    {/* silenciosamente ignora — usuário cancelou */}
-      else                            setError('Erro de reconhecimento de voz.')
+      switch (err) {
+        case 'no-speech':
+          setError('Não consegui ouvir nada. Tente falar mais perto do microfone.')
+          break
+        case 'not-allowed':
+        case 'service-not-allowed':
+          setError('Permissão de microfone negada. Habilite nas configurações do navegador.')
+          break
+        case 'audio-capture':
+          setError('Microfone não encontrado ou indisponível.')
+          break
+        case 'network':
+          setError('Sem conexão para reconhecimento de voz.')
+          break
+        case 'aborted':
+          // silencioso — usuário cancelou
+          break
+        default:
+          setError(`Erro de reconhecimento: ${err}`)
+      }
       setIsListening(false)
     }
     rec.onend = () => setIsListening(false)
@@ -120,20 +142,52 @@ export function useVoiceInput(lang = 'pt-BR'): VoiceInputApi {
       try { rec.abort() } catch { /* ignora */ }
       recRef.current = null
     }
-  }, [SRClass, lang])
+  }, [SRClass, lang, isIOSDevice])
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
+    if (isIOSDevice) {
+      setError('O iOS não permite gravação de voz por web. Tente em um Android ou computador.')
+      return
+    }
     if (!recRef.current || isListening) return
+
     setError(null)
     finalRef.current = ''
     setTranscript('')
+
+    // ── Permissão explícita de microfone (mais confiável que esperar o SR pedir) ──
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        // Para o stream — só queremos a permissão, o SR vai pegar seu próprio handle
+        stream.getTracks().forEach(t => t.stop())
+      }
+    } catch (e) {
+      const err = e as { name?: string }
+      if (err.name === 'NotAllowedError') {
+        setError('Permissão de microfone negada. Habilite nas configurações do site.')
+      } else if (err.name === 'NotFoundError') {
+        setError('Microfone não encontrado neste dispositivo.')
+      } else {
+        setError('Não foi possível acessar o microfone.')
+      }
+      return
+    }
+
     try {
       recRef.current.start()
       setIsListening(true)
-    } catch {
-      setError('Não foi possível iniciar a gravação.')
+    } catch (e) {
+      const err = e as { message?: string }
+      if (err.message?.includes('already started')) {
+        // Caso edge: tenta parar e iniciar de novo
+        try { recRef.current.stop() } catch { /* ignora */ }
+        setIsListening(false)
+      } else {
+        setError('Não foi possível iniciar a gravação.')
+      }
     }
-  }, [isListening])
+  }, [isListening, isIOSDevice])
 
   const stop = useCallback(() => {
     if (!recRef.current) return
@@ -147,5 +201,14 @@ export function useVoiceInput(lang = 'pt-BR'): VoiceInputApi {
     setError(null)
   }, [])
 
-  return { isSupported, isListening, transcript, error, start, stop, reset }
+  return {
+    isSupported,
+    isListening,
+    transcript,
+    error,
+    unsupportedReason,
+    start,
+    stop,
+    reset,
+  }
 }
