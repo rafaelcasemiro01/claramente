@@ -23,7 +23,6 @@ import { emotionEngine } from '@/lib/emotionEngine'
 import { ProactiveCard } from '@/components/ProactiveCard'
 import { ClaramenteLogo } from '@/components/Logo'
 import { UserNav } from '@/components/UserNav'
-import { OnboardingModal } from '@/components/OnboardingModal'
 import {
   Send, Plus, Sparkle, Volume, VolumeOff,
   BarChart, Person, LogOut, Sun, Moon, Menu,
@@ -181,45 +180,21 @@ export default function Home() {
   function Sidebar() {
     return (
       <aside style={{
-        width: 264, flexShrink: 0, height: '100dvh',
+        width: 264, flexShrink: 0, height: '100%',
         display: 'flex', flexDirection: 'column',
         background: t.surface2, borderRight: `1px solid ${t.border}`,
       }}>
-        {/* Top bar minimalista: ☰ + avatar (estilo GitHub) */}
-        <div style={{
-          height: 52, padding: '0 12px', flexShrink: 0,
-          display: 'flex', alignItems: 'center', gap: 8,
-          borderBottom: `1px solid ${t.borderSoft}`,
-        }}>
-          <button style={iconBtn(t)} title="Menu" aria-label="Menu">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="1.8" strokeLinecap="round">
-              <line x1="3" y1="6"  x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => navigate('/perfil')}
-            title={profile?.name || 'Meu perfil'}
-            aria-label="Meu perfil"
-            style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: t.accent,
-              border: `1.5px solid ${t.accentBorder}`,
-              cursor: 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#faf6f0', fontSize: 12, fontWeight: 700,
-              transition: 'transform 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.borderColor = t.accent }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = t.accentBorder }}
-          >
-            {firstName.charAt(0).toUpperCase()}
-          </button>
-        </div>
+        <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${t.borderSoft}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <ClaramenteLogo size={32} mode={mode}/>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: t.text, margin: 0, letterSpacing: -0.2, lineHeight: 1.2 }}>Claramente</p>
+              <p style={{ fontSize: 11, color: t.accentDeep, margin: 0, fontStyle: 'italic', opacity: 0.85, lineHeight: 1.2, marginTop: 2 }}>
+                Sua mente em equilíbrio.
+              </p>
+            </div>
+          </div>
 
-        {/* Nova conversa */}
-        <div style={{ padding: '12px 14px', borderBottom: `1px solid ${t.borderSoft}`, flexShrink: 0 }}>
           <button
             onClick={newChat}
             style={{
@@ -304,34 +279,47 @@ export default function Home() {
           >
             <BarChart size={14} color={t.textSub}/> Relatórios
           </button>
-          <button
-            onClick={() => navigate('/perfil')}
-            style={{
-              width: '100%', padding: '9px 12px', borderRadius: 10,
-              border: 'none', background: 'transparent', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 9,
-              color: t.textSub, fontSize: 12.5, fontWeight: 500, fontFamily: fontStack,
-            }}
-          >
-            <Person size={14} color={t.textSub}/> Perfil
+        </div>
+
+        {/* User row */}
+        <div style={{
+          margin: 10, padding: '8px 10px', borderRadius: 10,
+          background: isDark ? t.surface : '#fff',
+          border: `1px solid ${t.borderSoft}`,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontSize: 12.5, fontWeight: 600, flexShrink: 0,
+          }}>{firstName.charAt(0).toUpperCase()}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 12.5, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2 }}>
+              {profile?.name || 'Você'}
+            </p>
+            <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2 }}>
+              {muted ? 'Som desligado' : 'Som ligado'}
+            </p>
+          </div>
+          <button onClick={toggle} title="Tema" style={iconBtn(t)}>
+            {isDark ? <Sun size={14} color={t.textMuted}/> : <Moon size={14} color={t.textMuted}/>}
           </button>
         </div>
 
-        {/* Ações rápidas no rodapé: tema, som, sair */}
+        {/* Hidden secondary actions row */}
         <div style={{
-          padding: '8px 12px',
-          borderTop: `1px solid ${t.borderSoft}`,
+          height: 44, padding: '0 12px', borderTop: `1px solid ${t.borderSoft}`,
           display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-          flexShrink: 0,
         }}>
-          <button onClick={toggle} title="Tema" style={iconBtn(t)}>
-            {isDark ? <Sun size={16} color={t.textMuted}/> : <Moon size={16} color={t.textMuted}/>}
-          </button>
           <button onClick={handleMute} title="Som" style={iconBtn(t)}>
-            {muted ? <VolumeOff size={16} color={t.danger}/> : <Volume size={16} color={t.textMuted}/>}
+            {muted ? <VolumeOff size={15} color={t.danger}/> : <Volume size={15} color={t.textMuted}/>}
+          </button>
+          <button onClick={() => navigate('/perfil')} title="Perfil" style={iconBtn(t)}>
+            <Person size={15} color={t.textMuted}/>
           </button>
           <button onClick={signOut} title="Sair" style={iconBtn(t)}>
-            <LogOut size={16} color={t.textMuted}/>
+            <LogOut size={15} color={t.textMuted}/>
           </button>
         </div>
       </aside>
@@ -370,14 +358,7 @@ export default function Home() {
           height: 52, padding: '0 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
         }}>
-          <button onClick={() => navigate('/perfil')} aria-label="Ir para o perfil" style={{
-              width: 34, height: 34, borderRadius: '50%', background: t.accent,
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
-              color: '#faf6f0', fontSize: 12, fontWeight: 600,
-            }}>
-            {profile?.name ? profile.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '?'}
-          </button>
+          <UserNav isDark={isDark}/>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ClaramenteLogo size={24} mode={mode}/>
             <span style={{ fontSize: 15, fontWeight: 700, color: t.text }}>
@@ -416,9 +397,6 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button onClick={handleMute} style={iconBtn(t)}>
               {muted ? <VolumeOff size={15} color={t.danger}/> : <Volume size={15} color={t.textMuted}/>}
-            </button>
-            <button aria-label="Mais opções" style={iconBtn(t)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.textMuted} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
             </button>
           </div>
         </header>
@@ -510,17 +488,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Timestamp divider */}
-            {messages.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, opacity: 0.5 }}>
-                <div style={{ flex: 1, height: '1px', background: t.border }}/>
-                <span style={{ fontSize: 11, color: t.textMuted, letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
-                  HOJE · {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <div style={{ flex: 1, height: '1px', background: t.border }}/>
-              </div>
-            )}
-
             {/* Messages — prose */}
             {messages.map(msg => (
               <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', marginBottom: 24, animation: 'mIn 0.25s ease' }}>
@@ -535,10 +502,10 @@ export default function Home() {
                   ) : (
                     <>
                       <div style={{
-                        width: 28, height: 28, borderRadius: '50%',
-                        background: t.accent,
+                        width: 18, height: 18, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${t.accent}, ${t.accentDeep})`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0,
+                        color: '#fff', fontSize: 9, fontWeight: 700,
                       }}>{firstName.charAt(0).toUpperCase()}</div>
                       <span style={{ fontSize: 11.5, fontWeight: 600, color: t.textSub, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                         Você
@@ -551,25 +518,11 @@ export default function Home() {
                   lineHeight: msg.role === 'assistant' ? 1.7 : 1.65,
                   color: msg.role === 'assistant' ? t.text : t.textSub,
                   whiteSpace: 'pre-wrap', wordBreak: 'break-word', letterSpacing: -0.1,
-                  paddingLeft: msg.role === 'assistant' ? 30 : 38,
-                  marginLeft: msg.role === 'assistant' ? 4 : 0,
-                  borderLeft: msg.role === 'assistant' ? `2px solid ${t.accentSoft}` : 'none',
+                  paddingLeft: 26, marginLeft: 4,
+                  borderLeft: msg.role === 'assistant' ? `2px solid ${t.accentSoft}` : `2px solid transparent`,
                 }}>
                   {msg.content}
                 </div>
-                {msg.role === 'assistant' && (
-                  <div style={{ display: 'flex', gap: 4, paddingLeft: 36, marginTop: 8 }}>
-                    <MsgActionBtn label="Copiar"    onClick={() => navigator.clipboard.writeText(msg.content)} t={t}
-                      icon={<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
-                    />
-                    <MsgActionBtn label="Ouvir"     onClick={() => speechEngine.speak(msg.content, { rate: 1.02, pitch: 0.94 })} t={t}
-                      icon={<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>}
-                    />
-                    <MsgActionBtn label="Continuar" onClick={() => sendMessage('Continue, por favor.')} t={t}
-                      icon={<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
-                    />
-                  </div>
-                )}
               </div>
             ))}
 
@@ -635,21 +588,6 @@ export default function Home() {
                   minWidth: 0,
                 }}
               />
-              <button aria-label="Microfone" style={{
-                width: 36, height: 36, borderRadius: '50%', border: 'none', flexShrink: 0,
-                cursor: 'pointer', background: 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textMuted,
-              }}
-                onMouseEnter={e => (e.currentTarget.style.color = t.accent)}
-                onMouseLeave={e => (e.currentTarget.style.color = t.textMuted)}
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="2" width="6" height="11" rx="3"/>
-                  <path d="M5 10a7 7 0 0 0 14 0"/>
-                  <line x1="12" y1="19" x2="12" y2="22"/>
-                  <line x1="8" y1="22" x2="16" y2="22"/>
-                </svg>
-              </button>
               <button
                 onClick={handleSend}
                 disabled={isTyping || !input.trim()}
@@ -673,7 +611,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <OnboardingModal/>
     </div>
   )
 }
@@ -688,28 +625,6 @@ function iconBtn(t: T): React.CSSProperties {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     WebkitTapHighlightColor: 'transparent',
   }
-}
-
-function MsgActionBtn({ label, onClick, t, icon }: {
-  label: string; onClick: () => void; t: T; icon: React.ReactNode
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 5,
-        padding: '4px 10px', borderRadius: 999,
-        border: `1px solid ${t.borderSoft}`,
-        background: t.surface, color: t.textMuted,
-        fontSize: 11.5, cursor: 'pointer', fontFamily: fontStack,
-        transition: 'all 0.12s',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.color = t.accentDeep }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = t.borderSoft; e.currentTarget.style.color = t.textMuted }}
-    >
-      {icon} {label}
-    </button>
-  )
 }
 
 function ActionCard({ title, subtitle, t, accent = false, onClick }: {
