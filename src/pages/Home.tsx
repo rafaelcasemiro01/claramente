@@ -336,6 +336,15 @@ export default function Home() {
     ::-webkit-scrollbar-thumb { background: ${isDark ? 'rgba(196,131,106,0.22)' : 'rgba(160,101,73,0.18)'}; border-radius: 4px; }
     textarea { -webkit-appearance: none; font-family: 'Inter', sans-serif; }
     textarea::placeholder { color: ${t.textMuted} !important; opacity: 0.7; }
+
+    /* ── Mobile header tweaks ─────────────────────────────────── */
+    @media (max-width: 640px) {
+      .topbar-logo { display: none !important; }
+      .topbar-title { font-size: 13px !important; }
+    }
+    @media (max-width: 480px) {
+      .topbar-title { display: none !important; }
+    }
   `
 
   return (
@@ -376,12 +385,14 @@ export default function Home() {
 
           <AvatarHome/>
 
-          <ClaramenteLogo size={24} mode={mode}/>
+          <span className="topbar-logo" style={{ display: 'flex' }}>
+            <ClaramenteLogo size={24} mode={mode}/>
+          </span>
         </div>
 
         {/* Center: title + status pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center', minWidth: 0, paddingLeft: 8, paddingRight: 8 }}>
-          <p style={{
+        <div className="topbar-center" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center', minWidth: 0, paddingLeft: 8, paddingRight: 8 }}>
+          <p className="topbar-title" style={{
             fontSize: 14, fontWeight: 600, color: t.text, margin: 0,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>

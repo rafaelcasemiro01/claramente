@@ -22,6 +22,46 @@ const RULES = [
   { label: 'Um caractere especial (!@#$%)', ok: (p: string) => /[!@#$%^&*]/.test(p) },
 ]
 
+// ── Opções inclusivas (mesma lista do Onboarding) ─────────────────────
+const PRONOUNS = [
+  { value: 'ele/dele',   label: 'Ele / Dele' },
+  { value: 'ela/dela',   label: 'Ela / Dela' },
+  { value: 'elu/delu',   label: 'Elu / Delu' },
+  { value: 'outro',      label: 'Outro' },
+  { value: 'nao_dizer',  label: 'Prefiro não dizer' },
+]
+const GENDERS = [
+  { value: 'mulher_cis',     label: 'Mulher cisgênero' },
+  { value: 'homem_cis',      label: 'Homem cisgênero' },
+  { value: 'mulher_trans',   label: 'Mulher trans' },
+  { value: 'homem_trans',    label: 'Homem trans' },
+  { value: 'nao_binarie',    label: 'Não-binárie' },
+  { value: 'genderfluid',    label: 'Gênero fluido' },
+  { value: 'agenero',        label: 'Agênero' },
+  { value: 'outro',          label: 'Outro' },
+  { value: 'nao_dizer',      label: 'Prefiro não dizer' },
+]
+const ORIENTATIONS = [
+  { value: 'heterossexual', label: 'Heterossexual' },
+  { value: 'homossexual',   label: 'Homossexual' },
+  { value: 'bissexual',     label: 'Bissexual' },
+  { value: 'pansexual',     label: 'Pansexual' },
+  { value: 'assexual',      label: 'Assexual' },
+  { value: 'queer',         label: 'Queer' },
+  { value: 'outro',         label: 'Outro' },
+  { value: 'nao_dizer',     label: 'Prefiro não dizer' },
+]
+
+function formatPhone(v: string): string {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2)  return d
+  if (d.length <= 7)  return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+function phoneFromDb(v: string | null | undefined): string {
+  return formatPhone(v || '')
+}
+
 function pwStrength(p: string) {
   const n = RULES.filter(r => r.ok(p)).length
   return [
@@ -106,6 +146,20 @@ export default function Profile() {
   const [savingName, setSavingName] = useState(false)
   const [nameDone,   setNameDone]   = useState(false)
   const [nameErr,    setNameErr]    = useState('')
+
+  // ── "Sobre você" (campos do onboarding, editáveis no perfil) ─────
+  const p2 = profile as unknown as {
+    pronouns?: string; gender?: string; sexual_orientation?: string;
+    birth_date?: string; phone?: string;
+  } | null
+  const [pronouns,    setPronouns]    = useState<string>(p2?.pronouns ?? '')
+  const [gender,      setGender]      = useState<string>(p2?.gender ?? '')
+  const [orientation, setOrientation] = useState<string>(p2?.sexual_orientation ?? '')
+  const [birthDate,   setBirthDate]   = useState<string>(p2?.birth_date ?? '')
+  const [phone,       setPhone]       = useState<string>(phoneFromDb(p2?.phone))
+  const [savingAbout, setSavingAbout] = useState(false)
+  const [aboutDone,   setAboutDone]   = useState(false)
+  const [aboutErr,    setAboutErr]    = useState('')
 
   const [newPw,    setNewPw]    = useState('')
   const [cfPw,     setCfPw]     = useState('')
@@ -257,6 +311,26 @@ export default function Profile() {
     if (error) setNameErr('Erro ao salvar.')
     else { setNameDone(true); setTimeout(() => setNameDone(false), 3000) }
     setSavingName(false)
+  }
+
+  async function saveAbout() {
+    if (!user) return
+    setSavingAbout(true); setAboutErr('')
+    const payload: Record<string, unknown> = {
+      pronouns:           pronouns    || null,
+      gender:             gender      || null,
+      sexual_orientation: orientation || null,
+      birth_date:         birthDate   || null,
+      phone:              phone ? phone.replace(/\D/g, '') : null,
+    }
+    const { error } = await supabase.from('profiles').update(payload).eq('id', user.id)
+    if (error) {
+      setAboutErr('Erro ao salvar. Verifique se as colunas foram criadas no Supabase (supabase-migration.sql).')
+    } else {
+      setAboutDone(true)
+      setTimeout(() => setAboutDone(false), 3000)
+    }
+    setSavingAbout(false)
   }
 
   async function savePw() {
@@ -436,6 +510,85 @@ export default function Profile() {
             onMouseEnter={e => { if (!savingName) e.currentTarget.style.filter = 'brightness(1.08)' }}
             onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}>
             {savingName ? 'Salvando...' : 'Salvar alterações'}
+          </button>
+        </Section>
+
+        {/* ── Sobre você ─────────────────────────────────────────── */}
+        <Section title="Sobre você" t={t}>
+          <p style={{ fontSize: 12.5, color: t.textMuted, lineHeight: 1.6, marginTop: -6, marginBottom: 4 }}>
+            Essas informações ajudam o Claramente a te acolher de forma mais respeitosa e inclusiva. Tudo é opcional.
+          </p>
+
+          {/* Pronome — segmented */}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 8 }}>Pronome</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 6 }}>
+              {PRONOUNS.map(p => {
+                const active = pronouns === p.value
+                return (
+                  <button key={p.value} type="button" onClick={() => setPronouns(active ? '' : p.value)}
+                    style={{
+                      padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+                      background: active ? t.accentSoft : 'transparent',
+                      border: `1px solid ${active ? t.accent : t.border}`,
+                      color: active ? t.accentDeep : t.textSub,
+                      fontSize: 13, fontWeight: active ? 600 : 500, fontFamily: fontStack,
+                      transition: 'all 0.12s',
+                    }}>
+                    {p.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Gênero */}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Gênero</label>
+            <select value={gender} onChange={e => setGender(e.target.value)}
+              style={{...inp(), appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a7a6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36}}>
+              <option value="">Selecione...</option>
+              {GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+            </select>
+          </div>
+
+          {/* Orientação */}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Orientação sexual</label>
+            <select value={orientation} onChange={e => setOrientation(e.target.value)}
+              style={{...inp(), appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a7a6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 36}}>
+              <option value="">Selecione...</option>
+              {ORIENTATIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          {/* Data de nascimento */}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Data de nascimento</label>
+            <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)}
+              style={inp()} onFocus={onFocusInp} onBlur={onBlurInp}/>
+          </div>
+
+          {/* Telefone */}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: t.text, marginBottom: 6 }}>Telefone</label>
+            <input type="tel" value={phone}
+              onChange={e => setPhone(formatPhone(e.target.value))}
+              placeholder="(11) 99999-9999"
+              style={inp()} onFocus={onFocusInp} onBlur={onBlurInp}/>
+            <p style={{ fontSize: 11, color: t.textMuted, marginTop: 4 }}>
+              Útil para emergências. Nunca compartilhamos com terceiros.
+            </p>
+          </div>
+
+          {aboutErr  && <p style={{ fontSize: 12, color: t.danger }}>{aboutErr}</p>}
+          {aboutDone && <p style={{ fontSize: 12, color: t.success }}>✓ Informações atualizadas!</p>}
+
+          <button onClick={saveAbout} disabled={savingAbout}
+            style={btnPrimary(savingAbout)}
+            onMouseEnter={e => { if (!savingAbout) e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => (e.currentTarget.style.filter = 'brightness(1)')}>
+            {savingAbout ? 'Salvando...' : 'Salvar informações'}
           </button>
         </Section>
 

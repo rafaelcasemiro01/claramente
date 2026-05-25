@@ -1,7 +1,8 @@
 // src/App.tsx
 // ─────────────────────────────────────────────────────────────────────
-// Roteamento + loader inicial. Loader retematizado para o cream warm.
-// Nenhuma mudança na lógica de rotas.
+// Roteamento + loader inicial + onboarding gate.
+// Se o usuário estiver logado mas NÃO completou o onboarding,
+// é redirecionado para /onboarding antes de acessar o app.
 // ─────────────────────────────────────────────────────────────────────
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -12,10 +13,19 @@ import Home from '@/pages/Home'
 import Reports from '@/pages/Reports'
 import Profile from '@/pages/Profile'
 import ResetPassword from '@/pages/ResetPassword'
+import Onboarding from '@/pages/Onboarding'
 import { ClaramenteLogo } from '@/components/Logo'
 
+/** Decide se o usuário deve completar o onboarding. */
+function needsOnboarding(profile: unknown): boolean {
+  const p = profile as { onboarding_completed?: boolean } | null | undefined
+  // Só redireciona se a coluna existir E for explicitamente false.
+  // Se vier undefined (coluna não criada ainda), não redireciona — evita prender o user.
+  return p?.onboarding_completed === false
+}
+
 function AppRoutes() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth() as ReturnType<typeof useAuth> & { profile: unknown }
 
   if (loading) return (
     <div style={{
@@ -41,14 +51,37 @@ function AppRoutes() {
     </div>
   )
 
+  const mustOnboard = !!user && needsOnboarding(profile)
+
   return (
     <Routes>
       <Route path="/reset-password" element={<ResetPassword/>}/>
-      <Route path="/"           element={user ? <Navigate to="/app" replace/>  : <Landing/>}/>
-      <Route path="/app"        element={user ? <Home/>     : <Navigate to="/" replace/>}/>
-      <Route path="/relatorios" element={user ? <Reports/>  : <Navigate to="/" replace/>}/>
-      <Route path="/perfil"     element={user ? <Profile/>  : <Navigate to="/" replace/>}/>
-      <Route path="*"           element={<Navigate to="/" replace/>}/>
+      <Route path="/" element={
+        user
+          ? <Navigate to={mustOnboard ? '/onboarding' : '/app'} replace/>
+          : <Landing/>
+      }/>
+      <Route path="/onboarding" element={
+        !user
+          ? <Navigate to="/" replace/>
+          : (mustOnboard ? <Onboarding/> : <Navigate to="/app" replace/>)
+      }/>
+      <Route path="/app" element={
+        !user
+          ? <Navigate to="/" replace/>
+          : (mustOnboard ? <Navigate to="/onboarding" replace/> : <Home/>)
+      }/>
+      <Route path="/relatorios" element={
+        !user
+          ? <Navigate to="/" replace/>
+          : (mustOnboard ? <Navigate to="/onboarding" replace/> : <Reports/>)
+      }/>
+      <Route path="/perfil" element={
+        !user
+          ? <Navigate to="/" replace/>
+          : (mustOnboard ? <Navigate to="/onboarding" replace/> : <Profile/>)
+      }/>
+      <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>
   )
 }

@@ -12,28 +12,36 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<{ error: unknown }>
   signIn: (email: string, password: string) => Promise<{ error: unknown }>
   signOut: () => Promise<void>
+  /** Recarrega o perfil do usuário atual do Supabase. Use após Onboarding ou Profile updates. */
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user,    setUser]    = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
- async function fetchProfile(userId: string) {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data && !error) setProfile(data as Profile)
-  } catch {
-    // Perfil ainda não existe, ignora
+  async function fetchProfile(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (data && !error) setProfile(data as Profile)
+    } catch {
+      // Perfil ainda não existe, ignora
+    }
   }
-}
+
+  /** Refetch do perfil do usuário atualmente logado. */
+  async function refreshProfile() {
+    if (!user) return
+    await fetchProfile(user.id)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -74,7 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, profile, loading, signUp, signIn, signOut, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   )
