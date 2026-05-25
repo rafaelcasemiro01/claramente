@@ -20,11 +20,10 @@ import { ProactiveCard } from '@/components/ProactiveCard'
 import { ClaramenteLogo } from '@/components/Logo'
 import {
   Send, Plus, Sparkle, Volume, VolumeOff,
-  BarChart, Person, LogOut, Sun, Moon, Menu, Mic,
+  BarChart, Person, LogOut, Sun, Moon, Menu,
 } from '@/components/Icons'
 import type { ConversationItem } from '@/hooks/useChat'
 import { useColors, fontStack } from '@/lib/theme'
-import { useVoiceInput } from '@/hooks/useVoiceInput'
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function TypingDots({ color }: { color: string }) {
@@ -101,32 +100,6 @@ export default function Home() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const taRef     = useRef<HTMLTextAreaElement>(null)
   const prevLen   = useRef(0)
-
-  // ── Voice input (Web Speech API) ──────────────────────────
-  const voice = useVoiceInput('pt-BR')
-  // Sincroniza o transcript com o textarea enquanto grava
-  useEffect(() => {
-    if (voice.isListening) {
-      setInput(voice.transcript)
-      if (taRef.current) {
-        taRef.current.style.height = 'auto'
-        taRef.current.style.height = Math.min(taRef.current.scrollHeight, 120) + 'px'
-      }
-    }
-  }, [voice.transcript, voice.isListening])
-
-  function toggleVoice() {
-    if (voice.isListening) {
-      voice.stop()
-      // Mantém o transcript no input para o usuário revisar e enviar
-    } else {
-      audio.init()
-      speechEngine.stop()
-      voice.reset()
-      setInput('')
-      voice.start()
-    }
-  }
 
   const { suggestion, dismiss } = useProactive(messages.length, isTyping)
   const grouped   = groupConvs(conversations)
@@ -359,20 +332,10 @@ export default function Home() {
     @keyframes sIn      { from { transform: translateX(-100%) } to { transform: translateX(0) } }
     @keyframes auraSoft { 0%,100% { transform: scale(1); opacity: 0.85 } 50% { transform: scale(1.08); opacity: 1 } }
     @keyframes pulseB   { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
-    @keyframes micPulse { 0%,100% { transform: scale(1); opacity: 0.6 } 50% { transform: scale(1.15); opacity: 0 } }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: ${isDark ? 'rgba(196,131,106,0.22)' : 'rgba(160,101,73,0.18)'}; border-radius: 4px; }
     textarea { -webkit-appearance: none; font-family: 'Inter', sans-serif; }
     textarea::placeholder { color: ${t.textMuted} !important; opacity: 0.7; }
-
-    /* ── Mobile header tweaks ─────────────────────────────────── */
-    @media (max-width: 640px) {
-      .topbar-logo { display: none !important; }
-      .topbar-title { font-size: 13px !important; }
-    }
-    @media (max-width: 480px) {
-      .topbar-title { display: none !important; }
-    }
   `
 
   return (
@@ -413,14 +376,12 @@ export default function Home() {
 
           <AvatarHome/>
 
-          <span className="topbar-logo" style={{ display: 'flex' }}>
-            <ClaramenteLogo size={24} mode={mode}/>
-          </span>
+          <ClaramenteLogo size={24} mode={mode}/>
         </div>
 
         {/* Center: title + status pill */}
-        <div className="topbar-center" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center', minWidth: 0, paddingLeft: 8, paddingRight: 8 }}>
-          <p className="topbar-title" style={{
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center', minWidth: 0, paddingLeft: 8, paddingRight: 8 }}>
+          <p style={{
             fontSize: 14, fontWeight: 600, color: t.text, margin: 0,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
@@ -630,11 +591,7 @@ export default function Home() {
               value={input}
               onChange={e => { setInput(e.target.value); autoResize() }}
               onKeyDown={onKey}
-              placeholder={
-                voice.isListening
-                  ? 'Ouvindo... pode falar.'
-                  : (isJournalingMode ? 'Escreva sua reflexão...' : 'Como você está se sentindo?')
-              }
+              placeholder={isJournalingMode ? 'Escreva sua reflexão...' : 'Como você está se sentindo?'}
               rows={1}
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
@@ -643,34 +600,6 @@ export default function Home() {
                 minWidth: 0,
               }}
             />
-
-            {/* ── Mic button ─────────────────────────────── */}
-            {voice.isSupported && (
-              <button
-                onClick={toggleVoice}
-                disabled={isTyping}
-                title={voice.isListening ? 'Parar de gravar' : 'Gravar voz'}
-                style={{
-                  width: 40, height: 40, borderRadius: '50%', border: 'none', flexShrink: 0,
-                  cursor: isTyping ? 'not-allowed' : 'pointer',
-                  background: voice.isListening ? t.danger : (isTyping ? t.surface2 : 'transparent'),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.15s',
-                  position: 'relative',
-                }}
-              >
-                <Mic size={16} color={voice.isListening ? '#fff' : t.textMuted}/>
-                {voice.isListening && (
-                  <span style={{
-                    position: 'absolute', inset: -4, borderRadius: '50%',
-                    border: `2px solid ${t.danger}`, opacity: 0.6,
-                    animation: 'micPulse 1.2s ease-in-out infinite',
-                    pointerEvents: 'none',
-                  }}/>
-                )}
-              </button>
-            )}
-
             <button
               onClick={handleSend}
               disabled={isTyping || !input.trim()}
@@ -689,13 +618,7 @@ export default function Home() {
             </button>
           </div>
           <p style={{ textAlign: 'center', fontSize: 11, color: t.textMuted, marginTop: 8, letterSpacing: 0.2 }}>
-            {voice.isListening
-              ? 'Pode falar... toque no microfone para parar.'
-              : voice.error
-                ? voice.error
-                : (isJournalingMode
-                  ? 'Sessão de journaling guiado ativa'
-                  : 'Claramente não substitui acompanhamento psicológico · CVV: 188')}
+            {isJournalingMode ? 'Sessão de journaling guiado ativa' : 'Claramente não substitui acompanhamento psicológico · CVV: 188'}
           </p>
         </div>
       </div>
