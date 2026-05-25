@@ -124,7 +124,7 @@ export default function Landing() {
   }
 
   async function verifyOtp() {
-    if (otp.length !== 6) { setOtpErr('Digite os 6 dígitos.'); return }
+    if (otp.length < 6) { setOtpErr('Digite o código completo.'); return }
     setOtpBusy(true); setOtpErr('')
     let result = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
     if (result.error) result = await supabase.auth.verifyOtp({ email, token: otp, type: 'signup' })
@@ -178,7 +178,7 @@ export default function Landing() {
           -webkit-box-shadow: 0 0 0 100px ${isDark ? t.surface2 : '#fffcf6'} inset !important;
           -webkit-text-fill-color: ${t.text} !important;
         }
-        .otp-input { text-align: center; letter-spacing: 10px; font-size: 24px !important; font-weight: 700 !important; }
+        .otp-input { text-align: center; letter-spacing: 8px; font-size: 22px !important; font-weight: 700 !important; }
       `}</style>
 
       {/* Breathing aura at bottom */}
@@ -251,17 +251,17 @@ export default function Landing() {
               </div>
               <p style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 6 }}>Verifique seu e-mail</p>
               <p style={{ fontSize: 13, color: t.textSub, lineHeight: 1.6, marginBottom: 22 }}>
-                Enviamos um código de 6 dígitos para<br/>
+                Enviamos um código de verificação para<br/>
                 <strong style={{ color: t.text }}>{email}</strong>
               </p>
 
               <input
                 className="otp-input"
-                type="text" inputMode="numeric" maxLength={6}
+                type="text" inputMode="numeric" maxLength={8}
                 value={otp}
-                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))}
                 onKeyDown={e => { if (e.key === 'Enter') verifyOtp() }}
-                placeholder="000000"
+                placeholder="00000000"
                 style={inputStyle({ height: 52 })}
                 onFocus={onFocus} onBlur={onBlur}
                 autoFocus
@@ -272,8 +272,8 @@ export default function Landing() {
 
               <button
                 onClick={verifyOtp}
-                disabled={otpBusy || otp.length !== 6}
-                style={primaryBtn(t, otpBusy || otp.length !== 6)}
+                disabled={otpBusy || otp.length < 6}
+                style={primaryBtn(t, otpBusy || otp.length < 6)}
               >
                 {otpBusy ? 'Verificando...' : 'Confirmar código'}
               </button>
