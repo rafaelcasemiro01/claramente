@@ -1,12 +1,51 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="14" fill="#0F172A"/>
-  <circle cx="32" cy="32" r="25" stroke="#60A5FA" stroke-width="1.5" fill="rgba(96,165,250,0.08)"/>
-  <circle cx="32" cy="32" r="29" stroke="#60A5FA" stroke-width="0.5" fill="none" opacity="0.2"/>
-  <path d="M32 17 C21 17 18 23 18 32" stroke="#93C5FD" stroke-width="3" stroke-linecap="round"/>
-  <path d="M32 17 C43 17 46 23 46 32" stroke="#60A5FA" stroke-width="3" stroke-linecap="round"/>
-  <line x1="32" y1="17" x2="32" y2="31" stroke="#BFDBFE" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M19 34 Q19 47 32 47 Q45 47 45 34" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M28 47 Q24 51 19 53" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
-  <circle cx="32" cy="32" r="4" fill="#60A5FA"/>
-  <circle cx="32" cy="32" r="1.5" fill="#0F172A"/>
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  
+  <defs>
+    <linearGradient id="bg" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#f0d0b8"></stop>
+      <stop offset="0.55" stop-color="#dba88c"></stop>
+      <stop offset="1" stop-color="#c4836a"></stop>
+    </linearGradient>
+    <radialGradient id="eye" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4d4c0"></stop>
+      <stop offset="0.45" stop-color="#e0a890"></stop>
+      <stop offset="0.85" stop-color="#c4836a"></stop>
+      <stop offset="1" stop-color="#2a1408"></stop>
+    </radialGradient>
+  </defs>
+
+  
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="#faf6f0"></rect>
+
+  
+  <line x1="32" y1="6" x2="32" y2="13" stroke="#c4836a" stroke-width="2" stroke-linecap="round"></line>
+  <circle cx="32" cy="5" r="3" fill="#c4836a"></circle>
+  <circle cx="32" cy="5" r="1.5" fill="#f4d4c0"></circle>
+
+  
+  <rect x="5" y="32" width="6" height="14" rx="3" fill="#a86b50"></rect>
+  <rect x="53" y="32" width="6" height="14" rx="3" fill="#a86b50"></rect>
+
+  
+  <rect x="12" y="15" width="40" height="44" rx="18" fill="url(#bg)"></rect>
+
+  
+  <circle cx="23" cy="32" r="7" fill="#3a1f14"></circle>
+  <circle cx="23" cy="32" r="5.8" fill="url(#eye)"></circle>
+  <circle cx="23" cy="32" r="2" fill="#f4d4c0"></circle>
+  <circle cx="21.5" cy="30.5" r="1.4" fill="#ffffff"></circle>
+
+  
+  <circle cx="41" cy="32" r="7" fill="#3a1f14"></circle>
+  <circle cx="41" cy="32" r="5.8" fill="url(#eye)"></circle>
+  <circle cx="41" cy="32" r="2" fill="#f4d4c0"></circle>
+  <circle cx="39.5" cy="30.5" r="1.4" fill="#ffffff"></circle>
+
+  
+  <ellipse cx="17" cy="44" rx="2.8" ry="1.8" fill="rgba(196,98,72,0.5)"></ellipse>
+  <ellipse cx="47" cy="44" rx="2.8" ry="1.8" fill="rgba(196,98,72,0.5)"></ellipse>
+
+  
+  <path d="M 25 47 Q 32 52 39 47" stroke="#5a3520" stroke-width="2" stroke-linecap="round" fill="none"></path>
 </svg>
