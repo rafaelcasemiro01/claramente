@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { supabase } from '@/lib/supabase'
 import { UserNav } from '@/components/UserNav'
+import { MoodHeatmap } from '@/components/MoodHeatmap'
 import { useColors, fontStack } from '@/lib/theme'
 
 interface Report {
@@ -61,6 +62,11 @@ export default function Reports() {
   const [msgCount,   setMsgCount]   = useState(0)
 
   useEffect(() => { if (user) load() }, [period, user])
+
+  /** Exporta o relatório atual como PDF via diálogo de impressão do navegador. */
+  function exportPDF() {
+    window.print()
+  }
 
   function getRange() {
     const now = new Date()
@@ -165,6 +171,12 @@ export default function Reports() {
         @keyframes shimmer{from{background-position:-200% 0}to{background-position:200% 0}}
         ::-webkit-scrollbar{width:6px;}
         ::-webkit-scrollbar-thumb{background:${isDark ? 'rgba(196,131,106,0.22)' : 'rgba(160,101,73,0.18)'};border-radius:4px;}
+        @media print {
+          html, body { background: #fff !important; }
+          .no-print { display: none !important; }
+          header { position: static !important; border: none !important; }
+          @page { size: A4; margin: 1.2cm; }
+        }
       `}</style>
 
       <header style={{
@@ -177,10 +189,21 @@ export default function Reports() {
           <UserNav isDark={isDark}/>
           <span style={{ fontSize: 15, fontWeight: 700, color: t.text, letterSpacing: -0.3 }}>Relatórios</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }} className="no-print">
           <span style={{ fontSize: 12.5, color: t.textMuted }}>
             {msgCount} mensage{msgCount !== 1 ? 'ns' : 'm'}
           </span>
+          <button onClick={exportPDF} title="Exportar como PDF" style={{
+            height: 36, padding: '0 14px', borderRadius: 10,
+            border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 7,
+            color: t.textSub, fontSize: 12.5, fontWeight: 600, fontFamily: fontStack,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/>
+            </svg>
+            PDF
+          </button>
           <button onClick={toggle} style={{
             width: 36, height: 36, borderRadius: 10,
             border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer',
@@ -213,6 +236,9 @@ export default function Reports() {
             )
           })}
         </div>
+
+        {/* Heatmap de humor — sempre visível, usa os check-ins diários */}
+        <MoodHeatmap days={35}/>
 
         {loading && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

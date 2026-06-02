@@ -8,21 +8,14 @@ export interface Profile {
   name: string
   created_at: string
 
-  /** URL da foto de perfil (Supabase Storage). */
   avatar_url?: string | null
 
-  // ── Onboarding inclusivo ──────────────────────────────────────────
-  /** Pronome preferido: 'ele/dele', 'ela/dela', 'elu/delu', 'outro', 'nao_dizer'. */
+  // ── Onboarding inclusivo ──
   pronouns?: string | null
-  /** Identidade de gênero: 'mulher_cis', 'homem_cis', 'mulher_trans', 'homem_trans', 'nao_binarie', 'genderfluid', 'agenero', 'outro', 'nao_dizer'. */
   gender?: string | null
-  /** Orientação sexual: 'heterossexual', 'homossexual', 'bissexual', 'pansexual', 'assexual', 'queer', 'outro', 'nao_dizer'. */
   sexual_orientation?: string | null
-  /** Data de nascimento em formato ISO (YYYY-MM-DD). */
   birth_date?: string | null
-  /** Telefone (armazenado sem formatação, só dígitos). */
   phone?: string | null
-  /** Flag indicando se o usuário já passou pela tela de onboarding. */
   onboarding_completed?: boolean
 
   updated_at?: string
@@ -58,5 +51,18 @@ export interface Report {
   progress_notes?: string
   suggestions?: string[]
   message_count: number
+  created_at: string
+}
+
+// ── Check-in diário ────────────────────────────────────────────────
+export type Mood = 'happy' | 'serene' | 'neutral' | 'anxious' | 'sad'
+
+export interface DailyCheckin {
+  id: string
+  user_id: string
+  mood: Mood
+  note?: string | null
+  /** Data do check-in no formato YYYY-MM-DD. */
+  checkin_date: string
   created_at: string
 }

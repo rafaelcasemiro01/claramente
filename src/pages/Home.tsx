@@ -25,6 +25,7 @@ import {
 import type { ConversationItem } from '@/hooks/useChat'
 import { useColors, fontStack } from '@/lib/theme'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { DailyCheckIn } from '@/components/DailyCheckIn'
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function TypingDots({ color }: { color: string }) {
@@ -486,6 +487,17 @@ export default function Home() {
         padding: '24px 24px 16px', position: 'relative',
       }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
+
+          {/* Check-in diário — aparece no topo quando a conversa está vazia */}
+          {messages.length === 0 && (
+            <DailyCheckIn
+              onTalkAboutIt={(firstMessage) => {
+                audio.init()
+                speechEngine.unlock()
+                sendMessage(firstMessage)
+              }}
+            />
+          )}
 
           {/* Empty state */}
           {messages.length === 0 && (
