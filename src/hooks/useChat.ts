@@ -131,8 +131,33 @@ export function useChat() {
   }, [user, fetchConversations])
 
   const sendMessage = useCallback(async (content: string) => {
-    if (!user) return
+    // ── MODO VISITANTE (sem conta) ─────────────────────────────
+    // Conversa real com a IA, mas SEM persistir nada no Supabase.
+    // As mensagens vivem só em memória durante a sessão.
+    if (!user) {
+      const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content }
+      setMessages(prev => [...prev, userMsg])
+      setIsTyping(true)
+      try {
+        const history = messages.map(m => ({ role: m.role, content: m.content }))
+        const response = await sendToAI(content, history, undefined, false)
+        if (response.isCrisis) setIsCrisis(true)
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(), role: 'assistant',
+          content: response.message, sentiment: response.sentiment, isCrisis: response.isCrisis,
+        }])
+      } catch {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(), role: 'assistant',
+          content: 'Tive um problema de conexão. Pode tentar novamente?',
+        }])
+      } finally {
+        setIsTyping(false)
+      }
+      return
+    }
 
+    // ── MODO AUTENTICADO (persiste no Supabase) ────────────────
     let convId = conversationId
     if (!convId) {
       convId = await createConversation(user.id, isJournalingMode)

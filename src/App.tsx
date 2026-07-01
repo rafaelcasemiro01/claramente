@@ -1,8 +1,8 @@
 // src/App.tsx
 // ─────────────────────────────────────────────────────────────────────
 // Roteamento + loader inicial + onboarding gate.
-// Se o usuário estiver logado mas NÃO completou o onboarding,
-// é redirecionado para /onboarding antes de acessar o app.
+// GUEST-FIRST: visitantes entram direto no /app (chat) sem login.
+// A porta "/" leva o visitante ao app; o login clássico continua em "/entrar".
 // ─────────────────────────────────────────────────────────────────────
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -20,7 +20,6 @@ import { ClaramenteLogo } from '@/components/Logo'
 function needsOnboarding(profile: unknown): boolean {
   const p = profile as { onboarding_completed?: boolean } | null | undefined
   // Só redireciona se a coluna existir E for explicitamente false.
-  // Se vier undefined (coluna não criada ainda), não redireciona — evita prender o user.
   return p?.onboarding_completed === false
 }
 
@@ -56,31 +55,42 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/reset-password" element={<ResetPassword/>}/>
+
+      {/* Login clássico continua acessível aqui. */}
+      <Route path="/entrar" element={
+        user ? <Navigate to={mustOnboard ? '/onboarding' : '/app'} replace/> : <Landing/>
+      }/>
+
+      {/* Porta de entrada: visitante vai direto ao app (guest-first). */}
       <Route path="/" element={
         user
           ? <Navigate to={mustOnboard ? '/onboarding' : '/app'} replace/>
-          : <Landing/>
+          : <Navigate to="/app" replace/>
       }/>
+
       <Route path="/onboarding" element={
         !user
-          ? <Navigate to="/" replace/>
+          ? <Navigate to="/entrar" replace/>
           : (mustOnboard ? <Onboarding/> : <Navigate to="/app" replace/>)
       }/>
+
+      {/* Chat: acessível a visitante E a usuário logado. */}
       <Route path="/app" element={
-        !user
-          ? <Navigate to="/" replace/>
-          : (mustOnboard ? <Navigate to="/onboarding" replace/> : <Home/>)
+        mustOnboard ? <Navigate to="/onboarding" replace/> : <Home/>
       }/>
+
+      {/* Relatórios e Perfil continuam exigindo conta. */}
       <Route path="/relatorios" element={
         !user
-          ? <Navigate to="/" replace/>
+          ? <Navigate to="/app" replace/>
           : (mustOnboard ? <Navigate to="/onboarding" replace/> : <Reports/>)
       }/>
       <Route path="/perfil" element={
         !user
-          ? <Navigate to="/" replace/>
+          ? <Navigate to="/app" replace/>
           : (mustOnboard ? <Navigate to="/onboarding" replace/> : <Profile/>)
       }/>
+
       <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>
   )

@@ -1,10 +1,9 @@
 // src/pages/Home.tsx
 // ─────────────────────────────────────────────────────────────────────
-// Claramente — Home / Chat
-// Layout estilo GitHub: top bar fixo com hamburger + avatar (botão home),
-// sidebar como drawer (abre só quando clica no hamburger).
-// Mantém TODA a lógica: useChat, useProactive, audio, speechEngine,
-// emotionEngine, mute, journaling, crisis, ProactiveCard.
+// Claramente — Home / Chat  (com fluxo GUEST-FIRST)
+// Visitante entra direto e conversa; o login só aparece ao tentar guardar
+// algo (salvar, histórico, relatórios, perfil, journaling). Mantém TODA a
+// lógica de usuário logado: useChat, useProactive, audio, speech, etc.
 // ─────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -26,6 +25,10 @@ import type { ConversationItem } from '@/hooks/useChat'
 import { useColors, fontStack } from '@/lib/theme'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
+import GuestGate from '@/components/GuestGate'
+import GuestChip from '@/components/GuestChip'
+import ContinuityBanner from '@/components/ContinuityBanner'
+import type { GateReason } from '@/hooks/useGuestSession'
 
 // ── Helpers ─────────────────────────────────────────────────────────
 function TypingDots({ color }: { color: string }) {
@@ -81,10 +84,12 @@ function groupConvs(convs: ConversationItem[]) {
 // ── Page ────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, user } = useAuth()
   const { isDark, toggle }   = useTheme()
   const t = useColors()
   const mode = isDark ? 'dark' : 'light'
+
+  const isGuest = !user
 
   const {
     messages, isTyping, isCrisis, isJournalingMode,
@@ -99,13 +104,25 @@ export default function Home() {
   const [greetDone, setGreetDone]     = useState(false)
   const [mounted, setMounted]         = useState(false)
 
+  // ── Guest-first ───────────────────────────────────────────
+  const [gateReason, setGateReason]         = useState<GateReason | null>(null)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
+  /** Exige conta: se visitante, abre o soft-gate e devolve false. */
+  const requireAccount = (reason: GateReason = 'generic') => {
+    if (isGuest) { setGateReason(reason); return false }
+    return true
+  }
+
+  const guestUserMsgs = messages.filter(m => m.role === 'user').length
+  const showBanner = isGuest && guestUserMsgs >= 2 && !bannerDismissed
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const taRef     = useRef<HTMLTextAreaElement>(null)
   const prevLen   = useRef(0)
 
   // ── Voice input (Web Speech API) ──────────────────────────
   const voice = useVoiceInput('pt-BR')
-  // Sincroniza o transcript com o textarea enquanto grava
   useEffect(() => {
     if (voice.isListening) {
       setInput(voice.transcript)
@@ -117,11 +134,8 @@ export default function Home() {
   }, [voice.transcript, voice.isListening])
 
   function toggleVoice() {
-    speechEngine.unlock() // destrava TTS no mobile no primeiro toque
-    if (!voice.isSupported) {
-      // Mantém no input.error — será exibido no rodapé
-      return
-    }
+    speechEngine.unlock()
+    if (!voice.isSupported) return
     if (voice.isListening) {
       voice.stop()
     } else {
@@ -136,16 +150,17 @@ export default function Home() {
   const { suggestion, dismiss } = useProactive(messages.length, isTyping)
   const grouped   = groupConvs(conversations)
   const firstName = profile?.name?.split(' ')[0] || 'você'
-  const initial   = (profile?.name || firstName).charAt(0).toUpperCase()
+  const initial   = isGuest ? 'V' : (profile?.name || firstName).charAt(0).toUpperCase()
   const avatarUrl = (profile as unknown as { avatar_url?: string })?.avatar_url || ''
+  const greetText = isGuest ? 'Olá' : `Olá, ${firstName}`
 
   useEffect(() => { setTimeout(() => setMounted(true), 50) }, [])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, isTyping])
   useEffect(() => emotionEngine.subscribe(() => {}), [])
   useEffect(() => {
-    const id = setTimeout(() => speechEngine.speakWelcome(firstName), 600)
+    const id = setTimeout(() => speechEngine.speakWelcome(isGuest ? '' : firstName), 600)
     return () => clearTimeout(id)
-  }, [firstName])
+  }, [firstName, isGuest])
   useEffect(() => {
     if (messages.length > prevLen.current) {
       const last = messages.slice(prevLen.current).pop()
@@ -160,7 +175,6 @@ export default function Home() {
   }, [messages])
   useEffect(() => { if (isTyping) { audio.playAIStart(); speechEngine.stop() } }, [isTyping])
 
-  // Close sidebar on Esc
   useEffect(() => {
     if (!sidebarOpen) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSidebarOpen(false) }
@@ -184,15 +198,19 @@ export default function Home() {
     if (!input.trim() || isTyping) return
     const txt = input.trim(); setInput('')
     if (taRef.current) taRef.current.style.height = 'auto'
-    audio.init(); audio.playMessageSent(); speechEngine.speakAck(firstName)
-    speechEngine.unlock() // destrava TTS no mobile no primeiro gesto
+    audio.init(); audio.playMessageSent(); speechEngine.speakAck(isGuest ? '' : firstName)
+    speechEngine.unlock()
     await sendMessage(txt)
   }
 
   const onKey    = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
   const newChat  = () => { prevLen.current = 0; resetChat(); setSidebarOpen(false) }
   const loadConv = (id: string) => async () => { prevLen.current = 0; await loadConversation(id); setSidebarOpen(false) }
-  const journal  = async () => { audio.init(); audio.playJournaling(); speechEngine.speakJournalingStart(); prevLen.current = 0; await startJournaling(); setSidebarOpen(false) }
+  const journal  = async () => {
+    if (!requireAccount('generic')) { setSidebarOpen(false); return }
+    audio.init(); audio.playJournaling(); speechEngine.speakJournalingStart()
+    prevLen.current = 0; await startJournaling(); setSidebarOpen(false)
+  }
 
   // ── Avatar (home button) ──────────────────────────────────────────
   const AvatarHome = () => (
@@ -258,49 +276,67 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Conversations list */}
+      {/* Conversations list / aviso de visitante */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 8, minHeight: 0 }}>
-        {grouped.length === 0 && (
-          <p style={{ fontSize: 13, color: t.textMuted, padding: '24px 8px', textAlign: 'center', lineHeight: 1.6 }}>
-            Nenhuma conversa ainda.
-          </p>
+        {isGuest ? (
+          <button
+            onClick={() => { setGateReason('history'); setSidebarOpen(false) }}
+            style={{
+              width: '100%', textAlign: 'left', margin: '8px 4px', padding: '14px 12px',
+              borderRadius: 12, border: `1px dashed ${t.border}`, background: 'transparent',
+              cursor: 'pointer', fontFamily: fontStack,
+            }}
+          >
+            <p style={{ fontSize: 12.5, fontWeight: 600, color: t.text, margin: '0 0 4px' }}>Seu histórico</p>
+            <p style={{ fontSize: 11.5, color: t.textMuted, margin: 0, lineHeight: 1.5 }}>
+              Crie uma conta para guardar e retomar suas conversas.
+            </p>
+          </button>
+        ) : (
+          <>
+            {grouped.length === 0 && (
+              <p style={{ fontSize: 13, color: t.textMuted, padding: '24px 8px', textAlign: 'center', lineHeight: 1.6 }}>
+                Nenhuma conversa ainda.
+              </p>
+            )}
+            {grouped.map(g => (
+              <div key={g.label} style={{ marginBottom: 6 }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 600, color: t.textMuted,
+                  padding: '10px 10px 6px', letterSpacing: 0.7, textTransform: 'uppercase', margin: 0,
+                }}>{g.label}</p>
+                {g.items.map(c => {
+                  const active = conversationId === c.id
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={loadConv(c.id)}
+                      style={{
+                        width: '100%', textAlign: 'left', padding: '8px 10px 8px 11px',
+                        borderRadius: 8, border: 'none', cursor: 'pointer', marginBottom: 1,
+                        background: active ? (isDark ? t.surface3 : '#fff') : 'transparent',
+                        boxShadow: active && !isDark ? '0 1px 3px rgba(106,64,48,0.06)' : 'none',
+                        borderLeft: active ? `2px solid ${t.accent}` : '2px solid transparent',
+                        fontFamily: fontStack,
+                      }}
+                    >
+                      <p style={{
+                        fontSize: 13, fontWeight: active ? 600 : 500,
+                        color: active ? t.text : t.textSub,
+                        margin: '0 0 2px',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{c.title}</p>
+                      <p style={{
+                        fontSize: 11.5, color: t.textMuted, margin: 0,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{c.preview}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </>
         )}
-        {grouped.map(g => (
-          <div key={g.label} style={{ marginBottom: 6 }}>
-            <p style={{
-              fontSize: 10, fontWeight: 600, color: t.textMuted,
-              padding: '10px 10px 6px', letterSpacing: 0.7, textTransform: 'uppercase', margin: 0,
-            }}>{g.label}</p>
-            {g.items.map(c => {
-              const active = conversationId === c.id
-              return (
-                <button
-                  key={c.id}
-                  onClick={loadConv(c.id)}
-                  style={{
-                    width: '100%', textAlign: 'left', padding: '8px 10px 8px 11px',
-                    borderRadius: 8, border: 'none', cursor: 'pointer', marginBottom: 1,
-                    background: active ? (isDark ? t.surface3 : '#fff') : 'transparent',
-                    boxShadow: active && !isDark ? '0 1px 3px rgba(106,64,48,0.06)' : 'none',
-                    borderLeft: active ? `2px solid ${t.accent}` : '2px solid transparent',
-                    fontFamily: fontStack,
-                  }}
-                >
-                  <p style={{
-                    fontSize: 13, fontWeight: active ? 600 : 500,
-                    color: active ? t.text : t.textSub,
-                    margin: '0 0 2px',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{c.title}</p>
-                  <p style={{
-                    fontSize: 11.5, color: t.textMuted, margin: 0,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{c.preview}</p>
-                </button>
-              )
-            })}
-          </div>
-        ))}
       </div>
 
       {/* Sidebar footer — actions */}
@@ -311,15 +347,21 @@ export default function Home() {
         <button onClick={journal} style={drawerCta(t)}>
           <Sparkle size={14} color={t.accentDeep}/> Journaling guiado
         </button>
-        <button onClick={() => { navigate('/relatorios'); setSidebarOpen(false) }} style={drawerLink(t)}>
+        <button onClick={() => { if (requireAccount('reports')) { navigate('/relatorios'); setSidebarOpen(false) } }} style={drawerLink(t)}>
           <BarChart size={14} color={t.textSub}/> Relatórios
         </button>
-        <button onClick={() => { navigate('/perfil'); setSidebarOpen(false) }} style={drawerLink(t)}>
+        <button onClick={() => { if (requireAccount('history')) { navigate('/perfil'); setSidebarOpen(false) } }} style={drawerLink(t)}>
           <Person size={14} color={t.textSub}/> Meu perfil
         </button>
-        <button onClick={() => { signOut(); setSidebarOpen(false) }} style={drawerLink(t, t.danger)}>
-          <LogOut size={14} color={t.danger}/> Sair
-        </button>
+        {isGuest ? (
+          <button onClick={() => { setGateReason('generic'); setSidebarOpen(false) }} style={drawerLink(t, t.accentDeep)}>
+            <Person size={14} color={t.accentDeep}/> Entrar na conta
+          </button>
+        ) : (
+          <button onClick={() => { signOut(); setSidebarOpen(false) }} style={drawerLink(t, t.danger)}>
+            <LogOut size={14} color={t.danger}/> Sair
+          </button>
+        )}
       </div>
 
       {/* User row */}
@@ -341,10 +383,10 @@ export default function Home() {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 12.5, fontWeight: 600, color: t.text, margin: 0, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {profile?.name || firstName}
+            {isGuest ? 'Visitante' : (profile?.name || firstName)}
           </p>
           <p style={{ fontSize: 11, color: t.textMuted, margin: 0, lineHeight: 1.2 }}>
-            {muted ? 'Som desligado' : 'Som ligado'}
+            {isGuest ? 'Explorando sem conta' : (muted ? 'Som desligado' : 'Som ligado')}
           </p>
         </div>
         <button onClick={toggle} title="Tema" style={iconBtnS(t)}>
@@ -371,7 +413,6 @@ export default function Home() {
     textarea { -webkit-appearance: none; font-family: 'Inter', sans-serif; }
     textarea::placeholder { color: ${t.textMuted} !important; opacity: 0.7; }
 
-    /* ── Mobile header tweaks ─────────────────────────────────── */
     @media (max-width: 640px) {
       .topbar-logo { display: none !important; }
       .topbar-title { font-size: 13px !important; }
@@ -391,7 +432,7 @@ export default function Home() {
     }}>
       <style>{CSS}</style>
 
-      {/* ─── TOP BAR (GitHub-style) ─────────────────────────────── */}
+      {/* ─── TOP BAR ─────────────────────────────────────────── */}
       <header style={{
         flexShrink: 0,
         height: 56, padding: '0 16px',
@@ -399,7 +440,6 @@ export default function Home() {
         background: t.surface, borderBottom: `1px solid ${t.border}`,
         gap: 12, zIndex: 20,
       }}>
-        {/* Left: hamburger + avatar (home) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             onClick={() => setSidebarOpen(o => !o)}
@@ -424,7 +464,6 @@ export default function Home() {
           </span>
         </div>
 
-        {/* Center: title + status pill */}
         <div className="topbar-center" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center', minWidth: 0, paddingLeft: 8, paddingRight: 8 }}>
           <p className="topbar-title" style={{
             fontSize: 14, fontWeight: 600, color: t.text, margin: 0,
@@ -441,10 +480,20 @@ export default function Home() {
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: t.accent, animation: 'pulseB 2.4s ease-in-out infinite' }}/>
             <span style={{ fontSize: 11, fontWeight: 600, color: t.accentDeep, letterSpacing: 0.4 }}>Claramente</span>
           </div>
+          {isGuest && <GuestChip onClick={() => setGateReason('generic')}/>}
         </div>
 
-        {/* Right: mute + theme toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isGuest && (
+            <button
+              onClick={() => setGateReason('generic')}
+              style={{
+                height: 34, padding: '0 15px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: t.accent, color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: fontStack,
+                marginRight: 2, boxShadow: `0 2px 8px ${t.accent}55`,
+              }}
+            >Entrar</button>
+          )}
           <button onClick={handleMute} style={iconBtnH(t)} title={muted ? 'Som desligado' : 'Som ligado'}>
             {muted ? <VolumeOff size={16} color={t.danger}/> : <Volume size={16} color={t.textMuted}/>}
           </button>
@@ -488,8 +537,8 @@ export default function Home() {
       }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column' }}>
 
-          {/* Check-in diário — aparece no topo quando a conversa está vazia */}
-          {messages.length === 0 && (
+          {/* Check-in diário — só para usuário logado (persiste no banco) */}
+          {messages.length === 0 && !isGuest && (
             <DailyCheckIn
               onTalkAboutIt={(firstMessage) => {
                 audio.init()
@@ -509,7 +558,7 @@ export default function Home() {
                 fontSize: 'clamp(22px,4vw,28px)', fontWeight: 600, color: t.text,
                 marginBottom: 8, textAlign: 'center', letterSpacing: -0.6,
               }}>
-                {!greetDone ? <Typewriter text={`Olá, ${firstName}`} speed={45} onDone={() => setGreetDone(true)}/> : `Olá, ${firstName}`}
+                {!greetDone ? <Typewriter text={greetText} speed={45} onDone={() => setGreetDone(true)}/> : greetText}
               </h2>
               <p style={{ fontSize: 14, color: t.textSub, textAlign: 'center', fontStyle: 'italic' }}>
                 Como você está se sentindo hoje?
@@ -593,6 +642,16 @@ export default function Home() {
             </div>
           ))}
 
+          {/* Banner de continuidade — visitante após 2 mensagens */}
+          {showBanner && (
+            <div style={{ marginBottom: 20 }}>
+              <ContinuityBanner
+                onSave={() => setGateReason('save')}
+                onDismiss={() => setBannerDismissed(true)}
+              />
+            </div>
+          )}
+
           {isTyping && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', animation: 'fIn 0.2s ease' }}>
               <ClaramenteLogo size={18} mode={mode}/>
@@ -606,14 +665,13 @@ export default function Home() {
         </div>
       </main>
 
-      {/* ─── INPUT BAR (fixed in flex bottom) ────────────────── */}
+      {/* ─── INPUT BAR ────────────────────────────────────────── */}
       <div style={{
         flexShrink: 0, position: 'relative',
         padding: '14px 20px',
         paddingBottom: 'max(14px, env(safe-area-inset-bottom, 14px))',
         background: t.bg, borderTop: `1px solid ${t.borderSoft}`,
       }}>
-        {/* Aura */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 90,
           background: `radial-gradient(ellipse at 50% 100%, ${t.accent}1f 0%, transparent 65%)`,
@@ -661,7 +719,6 @@ export default function Home() {
               }}
             />
 
-            {/* ── Mic button (sempre visível) ────────────────────── */}
             <button
               onClick={toggleVoice}
               disabled={isTyping}
@@ -742,6 +799,15 @@ export default function Home() {
           </div>
         </>
       )}
+
+      {/* ─── SOFT-GATE DE LOGIN (visitante) ───────────────────── */}
+      {gateReason && (
+        <GuestGate
+          reason={gateReason}
+          onClose={() => setGateReason(null)}
+          onAuthed={() => setGateReason(null)}
+        />
+      )}
     </div>
   )
 }
@@ -757,7 +823,7 @@ function iconBtnH(t: T): React.CSSProperties {
     transition: 'all 0.12s', flexShrink: 0,
   }
 }
-function iconBtnS(t: T): React.CSSProperties {
+function iconBtnS(_t: T): React.CSSProperties {
   return {
     width: 30, height: 30, borderRadius: 8,
     border: 'none', background: 'transparent', cursor: 'pointer',
